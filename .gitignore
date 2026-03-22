@@ -1,0 +1,11 @@
+node_modules/
+.env
+*.log
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/vectors.json
+data/chunks.jsonl
+data/documents.jsonl
+nul
+.DS_Store

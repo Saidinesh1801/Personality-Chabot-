@@ -1,0 +1,5 @@
+{
+    "terminal.integrated.shellIntegration.environmentReporting": true,
+    "terminal.integrated.sendKeybindingsToShell": true,
+    "terminal.integrated.windowsUseConptyDll": true
+}
