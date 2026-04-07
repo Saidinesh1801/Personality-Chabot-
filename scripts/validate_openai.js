@@ -1,4 +1,4 @@
-(async ()=>{
+(async () => {
   try {
     require('dotenv').config();
     const OpenAI = require('openai');
@@ -8,9 +8,12 @@
       process.exit(2);
     }
     const client = new OpenAI({ apiKey: key });
-    console.log('Using key prefix:', key.slice(0,6));
+    console.log('Using key prefix:', key.slice(0, 6));
     // Call embeddings endpoint as a lightweight validation
-    const resp = await client.embeddings.create({ model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small', input: ['hello world'] });
+    const resp = await client.embeddings.create({
+      model: process.env.OPENAI_EMBEDDING_MODEL || 'text-embedding-3-small',
+      input: ['hello world'],
+    });
     if (resp && resp.data && resp.data[0] && resp.data[0].embedding) {
       console.log('EMBED_OK length=', resp.data[0].embedding.length);
       process.exit(0);

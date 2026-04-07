@@ -2,7 +2,7 @@
 
 /**
  * chunker.js
- * 
+ *
  * Splits documents into passages (chunks) with overlap.
  * Input: JSONL file with {id, text, metadata}
  * Output: JSONL file with {chunk_id, text, tokens, metadata}
@@ -12,8 +12,8 @@ const fs = require('fs');
 const readline = require('readline');
 const path = require('path');
 
-const CHUNK_SIZE = 500;      // tokens per chunk (approximate)
-const OVERLAP = 50;           // overlap tokens
+const CHUNK_SIZE = 500; // tokens per chunk (approximate)
+const OVERLAP = 50; // overlap tokens
 
 /**
  * Rough token count (splits on whitespace; not precise)
@@ -28,14 +28,14 @@ function countTokens(text) {
 function chunkText(text, chunkSize = CHUNK_SIZE, overlap = OVERLAP) {
   const words = text.split(/\s+/);
   const chunks = [];
-  
+
   for (let i = 0; i < words.length; i += chunkSize - overlap) {
     const chunk = words.slice(i, i + chunkSize).join(' ');
     if (chunk.trim().length > 0) {
       chunks.push(chunk);
     }
   }
-  
+
   return chunks;
 }
 
@@ -95,7 +95,7 @@ async function processDocuments() {
   console.log(`   Output: ${outputPath}`);
 }
 
-processDocuments().catch(err => {
+processDocuments().catch((err) => {
   console.error('❌ Error:', err.message);
   process.exit(1);
 });

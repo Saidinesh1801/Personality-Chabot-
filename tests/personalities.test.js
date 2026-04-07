@@ -1,6 +1,10 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { getPersonalities, getPersonalityPrompt, getToneForSituation } = require('../src/personalities');
+const {
+  getPersonalities,
+  getPersonalityPrompt,
+  getToneForSituation,
+} = require('../src/personalities');
 
 describe('getPersonalities', () => {
   it('should return an array of personality names', () => {

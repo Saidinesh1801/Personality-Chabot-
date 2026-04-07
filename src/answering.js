@@ -1,38 +1,21 @@
+/**
+ * @file Answer generation module - combines RAG, tools, personalities, and safety checks
+ * @module src/answering
+ */
+
 const { loadKB, normalize, findInKB } = require('./kb');
 const { applyPersonality, getPersonalityPrompt } = require('./personalities');
 const { callTool } = require('./tools');
-const { externalKB_sources, fetchWikipediaWithSource, fetchMovieInfo, runAdapters } = require('./adapters');
-const { answerWithRAG, retrieveRAG } = require('./rag');
 const { checkSafety, applyHumorGuardrail, enhanceMusicResponse } = require('./safety');
 
 const kbMap = loadKB();
 
-const ownerData = {
-  "twitter": { name: "X (formerly Twitter)", owner: "Elon Musk", note: "acquired in 2022" },
-  "x": { name: "X (formerly Twitter)", owner: "Elon Musk", note: "acquired in 2022" },
-  "tesla": { name: "Tesla, Inc.", owner: "Publicly traded; led by Elon Musk (CEO)" },
-  "spacex": { name: "SpaceX", owner: "Elon Musk", note: "privately held aerospace company" },
-  "facebook": { name: "Facebook (now Meta Platforms)", owner: "Publicly traded (Meta); founded by Mark Zuckerberg" },
-  "meta": { name: "Meta Platforms, Inc.", owner: "Publicly traded; founded by Mark Zuckerberg" },
-  "instagram": { name: "Instagram", owner: "Meta Platforms", note: "acquired by Facebook (Meta) in 2012" },
-  "whatsapp": { name: "WhatsApp", owner: "Meta Platforms", note: "acquired by Facebook (Meta) in 2014" },
-  "youtube": { name: "YouTube", owner: "Google (Alphabet)", note: "acquired by Google in 2006" },
-  "google": { name: "Google / Alphabet Inc.", owner: "Publicly traded (Alphabet); co-founded by Larry Page and Sergey Brin" },
-  "apple": { name: "Apple Inc.", owner: "Publicly traded; founded by Steve Jobs, Steve Wozniak, and Ronald Wayne" },
-  "microsoft": { name: "Microsoft Corporation", owner: "Publicly traded; founded by Bill Gates and Paul Allen" },
-  "amazon": { name: "Amazon.com, Inc.", owner: "Publicly traded; founded by Jeff Bezos" },
-  "openai": { name: "OpenAI", owner: "Privately-held; led by CEO Sam Altman" }
-};
+const { hasLLM: checkHasLLM } = require('./llm');
 
 let generateAnswerFn = null;
-let hasLLMFn = () => false;
 
 function setGenerateAnswer(fn) {
   generateAnswerFn = fn;
-}
-
-function setHasLLM(fn) {
-  hasLLMFn = fn;
 }
 
 async function askLLM(query, history, personalityPrompt, options = {}, context = null) {
@@ -40,6 +23,7 @@ async function askLLM(query, history, personalityPrompt, options = {}, context =
   try {
     return await generateAnswerFn(query, context, history, personalityPrompt, options);
   } catch (err) {
+    console.error('[Answering] LLM error:', err.message);
     return null;
   }
 }
@@ -51,7 +35,7 @@ function scoreResponse(query, response) {
   const rWords = response.toLowerCase().match(/\b\w+\b/g) || [];
   const setR = new Set(rWords);
   let matches = 0;
-  qWords.forEach(w => {
+  qWords.forEach((w) => {
     if (setR.has(w)) matches++;
   });
   return qWords.length > 0 ? matches / qWords.length : 0;
@@ -61,7 +45,10 @@ function scoreResponse(query, response) {
 function isSpeculative(message) {
   const low = (message || '').toLowerCase();
   // look for modal verbs combined with future-oriented keywords
-  return /\b(?:think|would|could|might|should|predict)\b/.test(low) && /\b(win|happen|occur|likely)\b/.test(low);
+  return (
+    /\b(?:think|would|could|might|should|predict)\b/.test(low) &&
+    /\b(win|happen|occur|likely)\b/.test(low)
+  );
 }
 
 async function findAnswer(message, history, personality, options = {}) {
@@ -81,16 +68,21 @@ async function findAnswer(message, history, personality, options = {}) {
 
   // if question is speculative, remind the model to answer as opinion/prediction
   if (isSpeculative(message)) {
-    personalityPrompt += "\n\nIMPORTANT: The user is asking for a prediction or your opinion about a future event. Do NOT state that the event has already happened; make it clear you are hypothesizing or that you don't have real-time results.\n";
+    personalityPrompt +=
+      "\n\nIMPORTANT: The user is asking for a prediction or your opinion about a future event. Do NOT state that the event has already happened; make it clear you are hypothesizing or that you don't have real-time results.\n";
   }
 
   // Apply mode-specific system prompt modifications
   const modePrompts = {
-    'web-search': '\n\nIMPORTANT: The user wants you to search the web for current information. Provide up-to-date, factual answers with sources when possible.',
-    'thinking': '\n\nIMPORTANT: Think step-by-step through this problem. Show your reasoning process clearly. Break down complex problems into smaller parts. Consider multiple angles before giving your final answer.',
-    'deep-research': '\n\nIMPORTANT: Provide an extremely thorough and comprehensive answer. Cover all aspects of the topic in depth. Include background, details, examples, pros/cons, and cite sources. This should be a detailed research-quality response.',
-    'study': '\n\nIMPORTANT: You are in Study & Learn mode. Explain concepts clearly as a teacher would. Use simple language, analogies, and examples. Break down complex topics into digestible parts. Add key takeaways and suggest further reading.',
-    'quiz': '\n\nIMPORTANT: Generate a quiz based on the user\'s topic. Create 5 multiple-choice questions with 4 options each (A, B, C, D). Mark the correct answer. Add a brief explanation for each correct answer. Format it clearly with markdown.',
+    'web-search':
+      '\n\nIMPORTANT: The user wants you to search the web for current information. Provide up-to-date, factual answers with sources when possible.',
+    thinking:
+      '\n\nIMPORTANT: Think step-by-step through this problem. Show your reasoning process clearly. Break down complex problems into smaller parts. Consider multiple angles before giving your final answer.',
+    'deep-research':
+      '\n\nIMPORTANT: Provide an extremely thorough and comprehensive answer. Cover all aspects of the topic in depth. Include background, details, examples, pros/cons, and cite sources. This should be a detailed research-quality response.',
+    study:
+      '\n\nIMPORTANT: You are in Study & Learn mode. Explain concepts clearly as a teacher would. Use simple language, analogies, and examples. Break down complex topics into digestible parts. Add key takeaways and suggest further reading.',
+    quiz: "\n\nIMPORTANT: Generate a quiz based on the user's topic. Create 5 multiple-choice questions with 4 options each (A, B, C, D). Mark the correct answer. Add a brief explanation for each correct answer. Format it clearly with markdown.",
   };
 
   if (options.mode && modePrompts[options.mode]) {
@@ -98,19 +90,22 @@ async function findAnswer(message, history, personality, options = {}) {
   }
 
   // Simple greetings — use KB for instant response
-  const greetings = ['hello','hi','hey','bye','goodbye','thanks','thank you','see you'];
+  const greetings = ['hello', 'hi', 'hey', 'bye', 'goodbye', 'thanks', 'thank you', 'see you'];
   if (greetings.includes(lowerMsg)) {
     const kbResult = findInKB(message, kbMap);
     if (kbResult) return { text: kbResult, source: null, score: 1 };
   }
 
   // For everything else, use LLM as the primary brain
-  if (hasLLMFn()) {
+  const llmAvailable = checkHasLLM();
+  console.log('[Answering] checkHasLLM():', llmAvailable);
+
+  if (llmAvailable) {
     // Try RAG-augmented answer first
     const ragResults = await retrieveRAG(message, 3);
     if (ragResults.length > 0 && ragResults[0].score >= 0.5) {
       const context = ragResults
-        .filter(p => p.score >= 0.5)
+        .filter((p) => p.score >= 0.5)
         .map((p, i) => `[Passage ${i + 1}] ${p.text}`)
         .join('\n\n');
       const ragLLM = await askLLM(message, history, personalityPrompt, options, context);
@@ -130,14 +125,21 @@ async function findAnswer(message, history, personality, options = {}) {
     // LLM was available but failed — try KB as fallback
     const kbFallback = findInKB(message, kbMap);
     if (kbFallback) return { text: kbFallback, source: null, score: 0.5 };
-    return { text: "Sorry, I couldn't get a response right now. The AI service may be busy — please try again in a moment.", source: null, score: 0 };
+    return {
+      text: "Sorry, I couldn't get a response right now. The AI service may be busy — please try again in a moment.",
+      source: null,
+      score: 0,
+    };
   }
 
   // No LLM available — use KB exact match only
   const kbExact = kbMap.get(lowerMsg);
   if (kbExact) return { text: kbExact, source: null };
 
-  return { text: "No AI provider is configured. Please set GEMINI_API_KEY in your .env file.", source: null };
+  return {
+    text: 'No AI provider is configured. Please set GEMINI_API_KEY in your .env file.',
+    source: null,
+  };
 }
 
 async function generateReply(message, personality, history, options = {}) {
@@ -185,11 +187,8 @@ async function generateReply(message, personality, history, options = {}) {
     reply += '\n\n_(This explanation might be a bit complex; feel free to ask me to simplify it.)_';
   }
 
-
-
   // actionable music outputs when appropriate
   reply = enhanceMusicResponse(message, reply);
-
 
   return applyPersonality(reply, personality);
 }
@@ -199,20 +198,26 @@ function buildFullPrompt(message, personality, options = {}) {
   let personalityPrompt = getPersonalityPrompt(personality);
   if (options.memoryHint) personalityPrompt += '\n\n' + options.memoryHint;
   if (isSpeculative(message)) {
-    personalityPrompt += "\n\nIMPORTANT: The user is asking for a prediction or your opinion about a future event. Do NOT state that the event has already happened; make it clear you are hypothesizing or that you don't have real-time results.\n";
+    personalityPrompt +=
+      "\n\nIMPORTANT: The user is asking for a prediction or your opinion about a future event. Do NOT state that the event has already happened; make it clear you are hypothesizing or that you don't have real-time results.\n";
   }
   const modePrompts = {
-    'web-search': '\n\nIMPORTANT: The user wants you to search the web for current information. Provide up-to-date, factual answers with sources when possible.',
-    'thinking': '\n\nIMPORTANT: Think step-by-step through this problem. Show your reasoning process clearly. Break down complex problems into smaller parts. Consider multiple angles before giving your final answer.',
-    'deep-research': '\n\nIMPORTANT: Provide an extremely thorough and comprehensive answer. Cover all aspects of the topic in depth. Include background, details, examples, pros/cons, and cite sources. This should be a detailed research-quality response.',
-    'study': '\n\nIMPORTANT: You are in Study & Learn mode. Explain concepts clearly as a teacher would. Use simple language, analogies, and examples. Break down complex topics into digestible parts. Add key takeaways and suggest further reading.',
-    'quiz': '\n\nIMPORTANT: Generate a quiz based on the user\'s topic. Create 5 multiple-choice questions with 4 options each (A, B, C, D). Mark the correct answer. Add a brief explanation for each correct answer. Format it clearly with markdown.',
+    'web-search':
+      '\n\nIMPORTANT: The user wants you to search the web for current information. Provide up-to-date, factual answers with sources when possible.',
+    thinking:
+      '\n\nIMPORTANT: Think step-by-step through this problem. Show your reasoning process clearly. Break down complex problems into smaller parts. Consider multiple angles before giving your final answer.',
+    'deep-research':
+      '\n\nIMPORTANT: Provide an extremely thorough and comprehensive answer. Cover all aspects of the topic in depth. Include background, details, examples, pros/cons, and cite sources. This should be a detailed research-quality response.',
+    study:
+      '\n\nIMPORTANT: You are in Study & Learn mode. Explain concepts clearly as a teacher would. Use simple language, analogies, and examples. Break down complex topics into digestible parts. Add key takeaways and suggest further reading.',
+    quiz: "\n\nIMPORTANT: Generate a quiz based on the user's topic. Create 5 multiple-choice questions with 4 options each (A, B, C, D). Mark the correct answer. Add a brief explanation for each correct answer. Format it clearly with markdown.",
   };
   if (options.mode && modePrompts[options.mode]) personalityPrompt += modePrompts[options.mode];
   if (options.pdfContext) {
-    personalityPrompt += '\n\nIMPORTANT: The user has uploaded a PDF document. The extracted text from the PDF is provided as context. Answer the user\'s question based on the PDF content. Reference specific sections, pages, or information from the document. Be thorough and accurate in your analysis of the document content.';
+    personalityPrompt +=
+      "\n\nIMPORTANT: The user has uploaded a PDF document. The extracted text from the PDF is provided as context. Answer the user's question based on the PDF content. Reference specific sections, pages, or information from the document. Be thorough and accurate in your analysis of the document content.";
   }
   return personalityPrompt;
 }
 
-module.exports = { generateReply, setGenerateAnswer, setHasLLM, buildFullPrompt };
+module.exports = { generateReply, setGenerateAnswer, buildFullPrompt };

@@ -12,7 +12,9 @@ try {
     vectorStore = JSON.parse(fs.readFileSync(vectorPath, 'utf8'));
   }
 } catch (err) {
-  console.log('Vector store not found; RAG retrieval skipped. Run "npm run ingest:all" to generate vectors.');
+  console.log(
+    'Vector store not found; RAG retrieval skipped. Run "npm run ingest:all" to generate vectors.'
+  );
 }
 
 function cosineSimilarity(vecA, vecB) {
@@ -62,13 +64,15 @@ async function getGeminiEmbedding(text) {
 }
 
 function getMockEmbedding(text) {
-  const hash = text.split('').reduce((h, c) => ((h << 5) - h) + c.charCodeAt(0), 0);
+  const hash = text.split('').reduce((h, c) => (h << 5) - h + c.charCodeAt(0), 0);
   const seed = Math.abs(hash);
   const rng = (i) => {
     const x = Math.sin(seed + i) * 10000;
     return x - Math.floor(x);
   };
-  return Array(768).fill(0).map((_, i) => rng(i) * 2 - 1);
+  return Array(768)
+    .fill(0)
+    .map((_, i) => rng(i) * 2 - 1);
 }
 
 async function getEmbedding(text) {
@@ -83,7 +87,7 @@ async function retrieveRAG(query, topK = 3) {
   }
 
   const queryVec = await getEmbedding(query);
-  const scored = vectorStore.vectors.map(vec => ({
+  const scored = vectorStore.vectors.map((vec) => ({
     text: vec.metadata.text,
     metadata: vec.metadata,
     score: cosineSimilarity(queryVec, vec.vector),
@@ -98,11 +102,11 @@ async function answerWithRAG(query, generateAnswer) {
     return await generateAnswer(query, null);
   }
 
-  const context = retrieved
-    .map((p, i) => `[Passage ${i + 1}] ${p.text}`)
-    .join('\n\n');
+  const context = retrieved.map((p, i) => `[Passage ${i + 1}] ${p.text}`).join('\n\n');
 
-  const sources = retrieved.map(p => p.metadata.url || 'Internal').filter((v, i, a) => a.indexOf(v) === i);
+  const sources = retrieved
+    .map((p) => p.metadata.url || 'Internal')
+    .filter((v, i, a) => a.indexOf(v) === i);
 
   const answer = await generateAnswer(query, context);
   if (answer) {
@@ -116,4 +120,11 @@ async function answerWithRAG(query, generateAnswer) {
   };
 }
 
-module.exports = { answerWithRAG, retrieveRAG, cosineSimilarity, getEmbedding, getGeminiEmbedding, getMockEmbedding };
+module.exports = {
+  answerWithRAG,
+  retrieveRAG,
+  cosineSimilarity,
+  getEmbedding,
+  getGeminiEmbedding,
+  getMockEmbedding,
+};

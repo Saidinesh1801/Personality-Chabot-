@@ -3,13 +3,32 @@
 // A very simple list of words that might indicate an off‑color or offensive joke.
 // In a real application you would use a proper moderation API.
 const offensiveTerms = [
-  'idiot', 'stupid', 'dumb', 'hate', 'insult', 'fuck', 'shit', 'bitch', 'slur',
+  'idiot',
+  'stupid',
+  'dumb',
+  'hate',
+  'insult',
+  'fuck',
+  'shit',
+  'bitch',
+  'slur',
 ];
 
 // Simple sensitive terms to steer away from.
 const sensitiveTerms = [
-  'kill', 'suicide', 'murder', 'rape', 'bomb', 'terror', 'drugs', 'violence',
-  'racist', 'racism', 'sexist', 'homophobic', 'hate',
+  'kill',
+  'suicide',
+  'murder',
+  'rape',
+  'bomb',
+  'terror',
+  'drugs',
+  'violence',
+  'racist',
+  'racism',
+  'sexist',
+  'homophobic',
+  'hate',
 ];
 
 function normalizeText(text) {
@@ -32,9 +51,13 @@ function enhanceMusicResponse(userMessage, botReply) {
   if (/music|song|playlist|track|vibe/.test(lower) && /recommend|suggest/.test(lower)) {
     const extra = [];
     extra.push('**Mood tags:** calm, upbeat, mellow (adjust to taste)');
-    extra.push('**Licensing:** verify rights – consider royalty-free libraries, Creative Commons, or commissioning original music.');
-    extra.push('**Sample vibe:** imagine a smooth piano with light percussion, mellow synth pads, and a relaxed tempo.');
-    return botReply + '\n\n' + extra.map(e => '- ' + e).join('\n');
+    extra.push(
+      '**Licensing:** verify rights – consider royalty-free libraries, Creative Commons, or commissioning original music.'
+    );
+    extra.push(
+      '**Sample vibe:** imagine a smooth piano with light percussion, mellow synth pads, and a relaxed tempo.'
+    );
+    return botReply + '\n\n' + extra.map((e) => '- ' + e).join('\n');
   }
   return botReply;
 }

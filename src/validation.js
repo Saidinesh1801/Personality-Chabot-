@@ -1,13 +1,13 @@
+/**
+ * @file Request validation module
+ * @module src/validation
+ */
+
 const { getPersonalities } = require('./personalities');
 const { sanitizeMessage } = require('./sanitizer');
 
 function validateChatRequest(body) {
-  const {
-    message,
-    personality = 'Friendly',
-    mode = 'default',
-    image,
-  } = body || {};
+  const { message, personality = 'Friendly', mode = 'default', image } = body || {};
 
   if (!message || typeof message !== 'string' || message.trim().length === 0) {
     return { valid: false, error: 'Message is required and must be a non-empty string' };

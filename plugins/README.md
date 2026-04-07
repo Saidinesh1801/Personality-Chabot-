@@ -1,6 +1,7 @@
 # Plugins Directory
 
 Place custom plugins here. Each plugin should export:
+
 - `name` (string) - Display name
 - `description` (string) - What it does
 - `version` (string) - Version
@@ -9,6 +10,7 @@ Place custom plugins here. Each plugin should export:
 - `execute(params, context)` (async function) - Main function
 
 Example plugin (plugins/example.js):
+
 ```js
 module.exports = {
   name: 'Calculator',
@@ -25,6 +27,6 @@ module.exports = {
     } catch {
       return { answer: 'Could not evaluate' };
     }
-  }
+  },
 };
 ```

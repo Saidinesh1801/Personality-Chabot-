@@ -32,15 +32,22 @@ function saveTeams(teams) {
 }
 function saveTeamMemberships(userId, memberships) {
   teamMemberships[userId] = memberships;
-  fs.writeFileSync(path.join(dataDir, 'team_memberships.json'), JSON.stringify(teamMemberships, null, 2));
+  fs.writeFileSync(
+    path.join(dataDir, 'team_memberships.json'),
+    JSON.stringify(teamMemberships, null, 2)
+  );
 }
 function saveSharedChats(teamId, chats) {
   sharedChats[teamId] = chats;
   fs.writeFileSync(path.join(dataDir, 'shared_chats.json'), JSON.stringify(sharedChats, null, 2));
 }
 
-function getAllTeams() { return teamsData; }
-function getOrCreateTeamsTable() { return teamsData; }
+function getAllTeams() {
+  return teamsData;
+}
+function getOrCreateTeamsTable() {
+  return teamsData;
+}
 function getAllTeamMemberships() {
   const result = [];
   for (const memberships of Object.values(teamMemberships)) {
@@ -48,8 +55,12 @@ function getAllTeamMemberships() {
   }
   return result;
 }
-function getTeamMemberships(userId) { return teamMemberships[userId] || []; }
-function getSharedChats(teamId) { return sharedChats[teamId] || []; }
+function getTeamMemberships(userId) {
+  return teamMemberships[userId] || [];
+}
+function getSharedChats(teamId) {
+  return sharedChats[teamId] || [];
+}
 
 const db = require('./db');
 
@@ -63,20 +74,22 @@ function createTeam(name, ownerId) {
 }
 
 function getTeam(teamId) {
-  return teamsData.find(t => t.id === teamId) || null;
+  return teamsData.find((t) => t.id === teamId) || null;
 }
 
 function getUserTeams(userId) {
   const memberships = getTeamMemberships(userId);
-  return memberships.map(m => {
-    const team = teamsData.find(t => t.id === m.teamId);
-    return team ? { ...team, role: m.role } : null;
-  }).filter(Boolean);
+  return memberships
+    .map((m) => {
+      const team = teamsData.find((t) => t.id === m.teamId);
+      return team ? { ...team, role: m.role } : null;
+    })
+    .filter(Boolean);
 }
 
 function addTeamMember(teamId, userId, role = 'member') {
   const memberships = getTeamMemberships(userId);
-  if (memberships.find(m => m.teamId === teamId)) return false;
+  if (memberships.find((m) => m.teamId === teamId)) return false;
   memberships.push({ teamId, userId, role, joinedAt: Date.now() });
   saveTeamMemberships(userId, memberships);
   return true;
@@ -84,28 +97,30 @@ function addTeamMember(teamId, userId, role = 'member') {
 
 function removeTeamMember(teamId, userId) {
   const memberships = getTeamMemberships(userId);
-  const filtered = memberships.filter(m => m.teamId !== teamId);
+  const filtered = memberships.filter((m) => m.teamId !== teamId);
   saveTeamMemberships(userId, filtered);
 }
 
 function getTeamMembers(teamId) {
   const allMemberships = getAllTeamMemberships();
-  const memberIds = allMemberships.filter(m => m.teamId === teamId).map(m => m.userId);
-  return memberIds.map(uid => {
-    const user = db.getUserById(uid);
-    if (!user) return null;
-    const membership = allMemberships.find(m => m.teamId === teamId && m.userId === uid);
-    return { userId: uid, name: user.name, email: user.email, role: membership?.role };
-  }).filter(Boolean);
+  const memberIds = allMemberships.filter((m) => m.teamId === teamId).map((m) => m.userId);
+  return memberIds
+    .map((uid) => {
+      const user = db.getUserById(uid);
+      if (!user) return null;
+      const membership = allMemberships.find((m) => m.teamId === teamId && m.userId === uid);
+      return { userId: uid, name: user.name, email: user.email, role: membership?.role };
+    })
+    .filter(Boolean);
 }
 
 function shareChatWithTeam(chatId, teamId, ownerId) {
   const memberships = getTeamMembers(teamId);
-  const memberIds = memberships.map(m => m.userId);
+  const memberIds = memberships.map((m) => m.userId);
   if (!memberIds.includes(ownerId)) return false;
 
   const shares = getSharedChats(teamId);
-  const existing = shares.find(s => s.chatId === chatId && s.teamId === teamId);
+  const existing = shares.find((s) => s.chatId === chatId && s.teamId === teamId);
   if (existing) return false;
 
   shares.push({ chatId, teamId, sharedBy: ownerId, sharedAt: Date.now() });
@@ -116,17 +131,21 @@ function shareChatWithTeam(chatId, teamId, ownerId) {
 function getTeamChats(teamId, userId) {
   const shared = getSharedChats(teamId);
   const myChats = db.getAllChats(userId);
-  const sharedChatIds = new Set(shared.map(s => s.chatId));
-  const myChatIds = new Set(myChats.map(c => c.id));
+  const sharedChatIds = new Set(shared.map((s) => s.chatId));
+  const myChatIds = new Set(myChats.map((c) => c.id));
 
   const allChatIds = new Set([...myChatIds, ...sharedChatIds]);
 
-  return Array.from(allChatIds).map(id => {
-    const isMine = myChatIds.has(id);
-    const chat = isMine ? myChats.find(c => c.id === id) : db.getChat(id, shared.find(s => s.chatId === id)?.sharedBy);
-    const share = shared.find(s => s.chatId === id);
-    return chat ? { ...chat, shared: !isMine, sharedBy: share?.sharedBy } : null;
-  }).filter(Boolean);
+  return Array.from(allChatIds)
+    .map((id) => {
+      const isMine = myChatIds.has(id);
+      const chat = isMine
+        ? myChats.find((c) => c.id === id)
+        : db.getChat(id, shared.find((s) => s.chatId === id)?.sharedBy);
+      const share = shared.find((s) => s.chatId === id);
+      return chat ? { ...chat, shared: !isMine, sharedBy: share?.sharedBy } : null;
+    })
+    .filter(Boolean);
 }
 
 function leaveTeam(teamId, userId) {
@@ -136,7 +155,7 @@ function leaveTeam(teamId, userId) {
 function deleteTeam(teamId, ownerId) {
   const team = getTeam(teamId);
   if (!team || team.ownerId !== ownerId) return false;
-  teamsData = teamsData.filter(t => t.id !== teamId);
+  teamsData = teamsData.filter((t) => t.id !== teamId);
   saveTeams(teamsData);
   return true;
 }

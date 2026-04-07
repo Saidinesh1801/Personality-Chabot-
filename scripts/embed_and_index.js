@@ -2,7 +2,7 @@
 
 /**
  * embed_and_index.js
- * 
+ *
  * Computes embeddings for chunks and indexes them into a vector store.
  * Currently uses a simple JSON file backend; can be swapped for Pinecone/Weaviate.
  * Input: JSONL file with chunks
@@ -14,7 +14,7 @@ const readline = require('readline');
 const path = require('path');
 require('dotenv').config();
 
-const BATCH_SIZE = 10;  // chunks to batch per API call
+const BATCH_SIZE = 10; // chunks to batch per API call
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || null;
 const EMBEDDING_MODEL = 'text-embedding-004';
@@ -39,7 +39,9 @@ async function getGeminiEmbedding(text) {
   return data?.embedding?.values;
 }
 
-function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function sleep(ms) {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 /**
  * Compute embeddings for a batch of texts using Gemini or mock fallback
@@ -56,14 +58,22 @@ async function getEmbeddings(texts) {
       } catch (err) {
         console.error(`   ⚠️  Embedding failed: ${err.message}`);
         // Fallback to mock for this text
-        results.push(Array(768).fill(0).map(() => Math.random()));
+        results.push(
+          Array(768)
+            .fill(0)
+            .map(() => Math.random())
+        );
       }
     }
     return results;
   }
 
   console.log(`   [mock] embedding ${texts.length} texts (no GEMINI_API_KEY set)...`);
-  return texts.map(() => Array(768).fill(0).map(() => Math.random()));
+  return texts.map(() =>
+    Array(768)
+      .fill(0)
+      .map(() => Math.random())
+  );
 }
 
 /**
@@ -73,7 +83,7 @@ function hash(text) {
   let h = 0;
   for (let i = 0; i < text.length; i++) {
     const char = text.charCodeAt(i);
-    h = ((h << 5) - h) + char;
+    h = (h << 5) - h + char;
     h |= 0;
   }
   return Math.abs(h).toString(36);
@@ -166,11 +176,13 @@ async function processChunks() {
   // Write vectors to JSON file
   fs.writeFileSync(outputPath, JSON.stringify({ vectors, count: vectors.length }, null, 2));
 
-  console.log(`✅ Embedded and indexed ${processedCount} chunks (skipped ${skippedCount} duplicates)`);
+  console.log(
+    `✅ Embedded and indexed ${processedCount} chunks (skipped ${skippedCount} duplicates)`
+  );
   console.log(`   Output: ${outputPath}`);
 }
 
-processChunks().catch(err => {
+processChunks().catch((err) => {
   console.error('❌ Error:', err.message);
   process.exit(1);
 });

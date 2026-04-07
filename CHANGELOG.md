@@ -13,6 +13,7 @@
 ## [2.5.0] — March 2026 — Intelligence Upgrade
 
 ### New Features
+
 - **Web Search Integration** — `src/websearch.js` provides DuckDuckGo and SerpAPI search, integrated into streaming responses via `/api/search`
 - **Thinking Indicator** — Animated "Thinking..." label replaces generic dots during AI processing, with live updates ("Searching the web...", "Found 5 results...")
 - **Streaming Cursor** — Subtle blinking cursor appears during slow responses to indicate active streaming
@@ -24,6 +25,7 @@
 - **ARIA Accessibility** — Added `role`, `aria-label`, `aria-expanded`, `aria-controls`, `aria-live` to all interactive elements
 
 ### Improvements
+
 - Deep Research and Web Search modes now show real-time progress in the thinking indicator
 - Keyboard shortcuts documented: `Ctrl+Shift+N`, `Ctrl+/`, `Esc`
 - Feature menu closes properly on click-outside
@@ -31,6 +33,7 @@
 - Export dialog asks to also export current chat as Markdown
 
 ### Cleanup
+
 - Removed `.bak` files (`app.js.bak`, `index.html.bak`, `style.css.bak`)
 - Consolidated feature documentation into README
 - Removed outdated claims about "as intelligent as ChatGPT/Gemini"

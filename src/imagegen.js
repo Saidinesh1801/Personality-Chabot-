@@ -34,7 +34,7 @@ async function generateImageDalle(prompt) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        Authorization: `Bearer ${OPENAI_API_KEY}`,
       },
       body: JSON.stringify({
         model: IMAGE_MODEL,
@@ -72,7 +72,7 @@ async function generateImageLeonardo(prompt) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${LEONARDO_API_KEY}`,
+        Authorization: `Bearer ${LEONARDO_API_KEY}`,
       },
       body: JSON.stringify({
         modelId: LEONARDO_MODEL,
@@ -89,9 +89,9 @@ async function generateImageLeonardo(prompt) {
     if (!genId) return null;
 
     for (let i = 0; i < 30; i++) {
-      await new Promise(r => setTimeout(r, 4000));
+      await new Promise((r) => setTimeout(r, 4000));
       const statusResp = await fetch(`https://cloud.leonardo.ai/api/rest/v1/generations/${genId}`, {
-        headers: { 'Authorization': `Bearer ${LEONARDO_API_KEY}` },
+        headers: { Authorization: `Bearer ${LEONARDO_API_KEY}` },
       });
       const statusData = await statusResp.json();
       const status = statusData?.generations_by_id?.[0]?.status;
@@ -119,9 +119,10 @@ async function generateImage(prompt, style = 'vivid') {
   let imageData = null;
 
   if (OPENAI_API_KEY) {
-    const dallePrompt = style === 'natural'
-      ? `${cleanPrompt}, photorealistic, high quality`
-      : `${cleanPrompt}, digital art, vibrant colors, detailed illustration`;
+    const dallePrompt =
+      style === 'natural'
+        ? `${cleanPrompt}, photorealistic, high quality`
+        : `${cleanPrompt}, digital art, vibrant colors, detailed illustration`;
     imageData = await generateImageDalle(dallePrompt);
   }
 
@@ -138,14 +139,28 @@ async function generateImage(prompt, style = 'vivid') {
 
 function detectImageRequest(text) {
   const imageKeywords = [
-    'generate an image', 'generate image', 'create an image', 'create image',
-    'draw', 'paint', 'show me a picture', 'can you draw', 'make an image',
-    'generate a picture', 'generate a photo', 'create a picture',
-    'image of', 'picture of', 'photo of', 'illustration of',
-    'visual of', 'render', 'visualize',
+    'generate an image',
+    'generate image',
+    'create an image',
+    'create image',
+    'draw',
+    'paint',
+    'show me a picture',
+    'can you draw',
+    'make an image',
+    'generate a picture',
+    'generate a photo',
+    'create a picture',
+    'image of',
+    'picture of',
+    'photo of',
+    'illustration of',
+    'visual of',
+    'render',
+    'visualize',
   ];
   const lower = text.toLowerCase();
-  return imageKeywords.some(kw => lower.includes(kw));
+  return imageKeywords.some((kw) => lower.includes(kw));
 }
 
 module.exports = { generateImage, detectImageRequest, generateImageDalle, generateImageLeonardo };

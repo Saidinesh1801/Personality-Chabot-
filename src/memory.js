@@ -12,10 +12,10 @@ Keep the summary concise (2-4 sentences max). Return ONLY the summary, no preamb
 const EMBED_SUMMARIES = new Map();
 
 function summarizeConversation(messages) {
-  const text = messages.map(m => `${m.role}: ${m.text}`).join('\n');
+  const text = messages.map((m) => `${m.role}: ${m.text}`).join('\n');
   if (!text) return null;
 
-  const hash = text.split('').reduce((h, c) => ((h << 5) - h) + c.charCodeAt(0), 0);
+  const hash = text.split('').reduce((h, c) => (h << 5) - h + c.charCodeAt(0), 0);
   return hash;
 }
 
@@ -25,7 +25,7 @@ async function generateMemorySummary(messages, userId) {
     messages = messages.slice(-100);
   }
 
-  const text = messages.map(m => `${m.role}: ${m.text}`).join('\n');
+  const text = messages.map((m) => `${m.role}: ${m.text}`).join('\n');
   if (!text) return null;
 
   const cacheKey = `${userId || 'anon'}_${summarizeConversation(messages)}`;
@@ -33,7 +33,10 @@ async function generateMemorySummary(messages, userId) {
   try {
     const result = await generateAnswer(
       `Please summarize the following conversation for future context:\n\n${text}`,
-      null, [], SUMMARIZE_PROMPT, {}
+      null,
+      [],
+      SUMMARIZE_PROMPT,
+      {}
     );
     if (result && result.text) {
       EMBED_SUMMARIES.set(cacheKey, result.text.trim());

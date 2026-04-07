@@ -19,6 +19,7 @@ RATE_LIMIT_MAX_REQUESTS=200 npm start
 ## API Endpoints
 
 ### 1. Chat Endpoint
+
 **POST** `/api/chat`
 
 ```bash
@@ -28,6 +29,7 @@ curl -X POST http://localhost:52738/api/chat \
 ```
 
 Response:
+
 ```json
 {
   "reply": "Hi there! How can I help you today?"
@@ -35,6 +37,7 @@ Response:
 ```
 
 Error Response (429 - Rate Limited):
+
 ```json
 {
   "error": "Too many requests. Please try again later.",
@@ -43,6 +46,7 @@ Error Response (429 - Rate Limited):
 ```
 
 ### 2. Health Check Endpoint
+
 **GET** `/api/health`
 
 ```bash
@@ -50,6 +54,7 @@ curl http://localhost:52738/api/health
 ```
 
 Response:
+
 ```json
 {
   "status": "ok",
@@ -81,16 +86,19 @@ OPENAI_API_KEY=your_key_here
 ## Debugging
 
 ### View Debug Logs
+
 ```bash
 LOG_LEVEL=DEBUG npm start
 ```
 
 ### Monitor Server Health
+
 ```bash
 watch -n 2 'curl -s http://localhost:52738/api/health | jq .'
 ```
 
 ### Test Rate Limiting
+
 ```bash
 for i in {1..150}; do curl -X POST http://localhost:52738/api/chat \
   -H "Content-Type: application/json" \
@@ -160,18 +168,22 @@ for i in {1..150}; do curl -X POST http://localhost:52738/api/chat \
 ## Common Issues & Solutions
 
 ### Rate limit reached during testing
+
 **Error**: `"Too many requests. Please try again later."`
 **Solution**: Wait 15 minutes or set higher limits: `RATE_LIMIT_MAX_REQUESTS=500 npm start`
 
 ### Logs not showing
+
 **Problem**: Default log level is INFO
 **Solution**: `LOG_LEVEL=DEBUG npm start`
 
 ### Port already in use
+
 **Problem**: Port 52738 is busy
 **Solution**: `PORT=3000 npm start`
 
 ### Slow responses
+
 **Problem**: Server taking too long
 **Solution**: Check with `/api/health` and monitor logs with `LOG_LEVEL=DEBUG`
 
@@ -185,6 +197,7 @@ for i in {1..150}; do curl -X POST http://localhost:52738/api/chat \
 ## Support
 
 For issues or questions:
+
 1. Check logs: `LOG_LEVEL=DEBUG npm start`
 2. Run health check: `curl http://localhost:52738/api/health`
 3. Test endpoint: Use curl or Postman to test `/api/chat`

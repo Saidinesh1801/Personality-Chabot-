@@ -36,7 +36,7 @@ async function searchSerpApi(query, numResults, cacheKey) {
     const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
     if (!resp.ok) throw new Error(`SerpAPI ${resp.status}`);
     const data = await resp.json();
-    const results = (data.organic_results || []).slice(0, numResults).map(r => ({
+    const results = (data.organic_results || []).slice(0, numResults).map((r) => ({
       title: r.title || '',
       url: r.link || '',
       snippet: r.snippet || '',

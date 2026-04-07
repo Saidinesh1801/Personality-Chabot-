@@ -1,3 +1,7 @@
+/**
+ * @file Database module for chatbot - handles all SQLite operations
+ * @module src/db
+ */
 const path = require('path');
 const fs = require('fs');
 const Database = require('better-sqlite3');
@@ -47,6 +51,15 @@ db.exec(`
     ts INTEGER,
     FOREIGN KEY (chat_id) REFERENCES chats(id) ON DELETE CASCADE
   );
+
+  CREATE TABLE IF NOT EXISTS user_memories (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    memory_text TEXT NOT NULL,
+    created_at INTEGER,
+    updated_at INTEGER,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  );
 `);
 
 // Migrate: add user_id column if missing (for existing databases)
@@ -66,8 +79,20 @@ try {
 const stmtCreateUser = db.prepare(
   'INSERT INTO users (email, password_hash, name, created_at) VALUES (?, ?, ?, ?)'
 );
+/**
+ * Creates a new user in the database
+ * @param {string} email - User email (will be normalized to lowercase)
+ * @param {string} passwordHash - Bcrypt hashed password
+ * @param {string} [name] - Optional user name
+ * @returns {number} The created user's ID
+ */
 function createUser(email, passwordHash, name) {
-  const result = stmtCreateUser.run(email.toLowerCase().trim(), passwordHash, name || null, Date.now());
+  const result = stmtCreateUser.run(
+    email.toLowerCase().trim(),
+    passwordHash,
+    name || null,
+    Date.now()
+  );
   return result.lastInsertRowid;
 }
 
@@ -79,6 +104,11 @@ function getUserByEmail(email) {
 const stmtGetUserById = db.prepare('SELECT id, email, name, created_at FROM users WHERE id = ?');
 function getUserById(id) {
   return stmtGetUserById.get(id) || null;
+}
+
+const stmtUpdateUserPassword = db.prepare('UPDATE users SET password_hash = ? WHERE id = ?');
+function updateUserPassword(userId, passwordHash) {
+  stmtUpdateUserPassword.run(passwordHash, userId);
 }
 
 // --- Sessions ---
@@ -117,9 +147,7 @@ function getAllChats(userId) {
 }
 
 const stmtGetChat = db.prepare('SELECT * FROM chats WHERE id = ? AND user_id = ?');
-const stmtGetMessages = db.prepare(
-  'SELECT * FROM messages WHERE chat_id = ? ORDER BY ts ASC'
-);
+const stmtGetMessages = db.prepare('SELECT * FROM messages WHERE chat_id = ? ORDER BY ts ASC');
 function getChat(id, userId) {
   const chat = stmtGetChat.get(id, userId);
   if (!chat) return undefined;
@@ -152,9 +180,7 @@ function deleteChat(id, userId) {
 const stmtAddMessage = db.prepare(
   'INSERT INTO messages (chat_id, role, text, image, ts) VALUES (?, ?, ?, ?, ?)'
 );
-const stmtTouchChat = db.prepare(
-  'UPDATE chats SET updated_at = ? WHERE id = ?'
-);
+const stmtTouchChat = db.prepare('UPDATE chats SET updated_at = ? WHERE id = ?');
 function addMessage(chatId, role, text, image, ts) {
   stmtAddMessage.run(chatId, role, text, image || null, ts);
   stmtTouchChat.run(ts, chatId);
@@ -167,15 +193,33 @@ function getRecentMessages(chatId, limit) {
   return stmtRecentMessages.all(chatId, limit).reverse();
 }
 
+// --- User Memories (Long-term) ---
+
+const stmtSaveMemory = db.prepare(
+  'INSERT OR REPLACE INTO user_memories (user_id, memory_text, created_at, updated_at) VALUES (?, ?, ?, ?)'
+);
+function saveUserMemory(userId, memoryText) {
+  const now = Date.now();
+  stmtSaveMemory.run(userId, memoryText, now, now);
+}
+
+const stmtGetMemory = db.prepare(
+  'SELECT memory_text FROM user_memories WHERE user_id = ? ORDER BY updated_at DESC LIMIT 1'
+);
+function getUserMemory(userId) {
+  const row = stmtGetMemory.get(userId);
+  return row ? row.memory_text : null;
+}
+
 module.exports = {
   db,
   createUser,
   getUserByEmail,
   getUserById,
+  updateUserPassword,
   createSession,
   getSession,
   deleteSession,
-  cleanExpiredSessions,
   getAllChats,
   getChat,
   createChat,
@@ -183,4 +227,6 @@ module.exports = {
   deleteChat,
   addMessage,
   getRecentMessages,
+  saveUserMemory,
+  getUserMemory,
 };

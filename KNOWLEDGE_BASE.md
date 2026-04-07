@@ -7,6 +7,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ---
 
 ## 🔤 Greetings & Pleasantries (10 Topics)
+
 - "hello" - Friendly greeting
 - "hi" - Casual greeting
 - "hey" - Informal greeting
@@ -23,6 +24,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ## 💻 Technology & Programming (45+ Topics)
 
 ### Programming Languages
+
 - "what is python" - Python language overview
 - "python" - Python reference
 - "what is javascript" - JavaScript overview
@@ -34,6 +36,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 - "what is rust" - Rust language
 
 ### Frameworks & Libraries
+
 - "what is react" - React library
 - "react" - React reference
 - "what is vue" - Vue.js framework
@@ -42,6 +45,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 - "nodejs" - Node.js reference
 
 ### Core Concepts
+
 - "what is html" - HTML markup
 - "html" - HTML reference
 - "what is css" - CSS styling
@@ -55,6 +59,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 - "what is nosql" - NoSQL databases
 
 ### Advanced Topics
+
 - "what is ai" - Artificial Intelligence
 - "what is machine learning" - ML overview
 - "what is deep learning" - Deep learning
@@ -93,6 +98,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ## 🏏 Cricket & Sports (22 Topics)
 
 ### Virat Kohli (Complete Information)
+
 - "virat kohli" - Full biography
 - "who is virat kohli" - Biographical info
 - "virat" - Shortened reference
@@ -114,6 +120,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 - "awards" - General awards
 
 ### Other Cricket Legends
+
 - "sachin tendulkar" - Master Blaster biography
 - "who is sachin tendulkar" - Sachin info
 - "ms dhoni" - MS Dhoni information
@@ -126,12 +133,14 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ## 🌍 Science & Nature (18 Topics)
 
 ### Physics & Fundamental Science
+
 - "what is gravity" - Gravity explanation
 - "gravity" - Gravity reference
 - "what is physics" - Physics science
 - "what is the periodic table" - Elements table
 
 ### Biology & Life Science
+
 - "what is evolution" - Evolution theory
 - "evolution" - Evolution reference
 - "what is photosynthesis" - Plant energy
@@ -146,6 +155,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ## 📚 History & Society (15 Topics)
 
 ### Historical Figures
+
 - "who is gandhi" - Mahatma Gandhi
 - "gandhi" - Gandhi reference
 - "who is einstein" - Albert Einstein
@@ -154,11 +164,13 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 - "newton" - Newton reference
 
 ### Historical Events
+
 - "what is world war 2" - WWII history
 - "what is the renaissance" - Renaissance period
 - "what is the industrial revolution" - Industrial era
 
 ### Philosophy & Society
+
 - "what is love" - Love definition
 - "what is life" - Life definition
 - "what is the meaning of life" - Life purpose
@@ -169,6 +181,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ## 🗺️ Geography & Culture (12 Topics)
 
 ### Countries
+
 - "what is india" - India information
 - "india" - India reference
 - "capital of india" - New Delhi
@@ -181,6 +194,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 - "japan" - Japan reference
 
 ### Cities
+
 - "what is london" - London information
 - "london" - London reference
 - "what is paris" - Paris information
@@ -193,18 +207,21 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ## 🎭 Entertainment & Famous Personalities (12 Topics)
 
 ### Sports Icons
+
 - "who is cristiano ronaldo" - Ronaldo biography
 - "ronaldo" - Ronaldo reference
 - "who is messi" - Messi biography
 - "messi" - Messi reference
 
 ### Film & Entertainment
+
 - "who is shahrukh khan" - Shah Rukh Khan
 - "shahrukh khan" - SRK reference
 - "who is taylor swift" - Taylor Swift
 - "taylor swift" - Swift reference
 
 ### Business & Innovation
+
 - "who is oprah winfrey" - Oprah biography
 - "oprah" - Oprah reference
 - "who is elon musk" - Elon biography
@@ -215,12 +232,14 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ## 💰 Business & Finance (12 Topics)
 
 ### Markets & Economics
+
 - "what is stock market" - Stock market overview
 - "what is cryptocurrency" - Crypto explanation
 - "what is inflation" - Inflation economics
 - "what is gdp" - GDP definition
 
 ### Cryptocurrencies & Digital Assets
+
 - "what is bitcoin" - Bitcoin explanation
 - "bitcoin" - Bitcoin reference
 - "what is ethereum" - Ethereum explanation
@@ -231,6 +250,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ---
 
 ## 💪 Health & Wellness (8 Topics)
+
 - "what is yoga" - Yoga practice
 - "yoga" - Yoga reference
 - "what is meditation" - Meditation practice
@@ -242,12 +262,14 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 ---
 
 ## 🎓 Education & Learning (3 Topics)
+
 - "what is a degree" - Academic degree
 - "what is machine learning certification" - ML cert
 
 ---
 
 ## 🎯 Utility & Help (7 Topics)
+
 - "what is your name" - Chatbot identity
 - "who are you" - Chatbot about
 - "what can you do" - Capabilities
@@ -268,6 +290,7 @@ This is a complete reference of all topics your intelligent chatbot can discuss.
 For any topics **not in the list above**, your chatbot uses **intelligent context-aware responses**:
 
 ### How the Fallback Works:
+
 1. **Definition requests** ("what is <unknown>") → Context-aware explanation
 2. **Person questions** ("who is <unknown>") → Biographical template
 3. **How-to questions** ("how to <unknown>") → Step-by-step guide
@@ -277,6 +300,7 @@ For any topics **not in the list above**, your chatbot uses **intelligent contex
 7. **General questions** → Thoughtful exploration
 
 ### Examples of Fallback:
+
 ```
 Q: "what is quantum computing"
 A: "Quantum computing refers to a concept with significant applications..."
@@ -304,20 +328,20 @@ All 177+ topics respond differently based on **5 personality modes**:
 
 ## 📊 Statistics
 
-| Metric | Count |
-|--------|-------|
-| **Total Knowledge Entries** | 177 |
-| **Technology Topics** | 45+ |
-| **Cricket & Sports** | 22 |
-| **Science Topics** | 18 |
-| **History Topics** | 15 |
-| **Geography Entries** | 12 |
-| **Entertainment Figures** | 12 |
-| **Business & Finance** | 12 |
-| **Health & Wellness** | 8 |
-| **Education Topics** | 3 |
-| **Greetings & Utility** | 7 |
-| **Personality Modes** | 5 |
+| Metric                      | Count |
+| --------------------------- | ----- |
+| **Total Knowledge Entries** | 177   |
+| **Technology Topics**       | 45+   |
+| **Cricket & Sports**        | 22    |
+| **Science Topics**          | 18    |
+| **History Topics**          | 15    |
+| **Geography Entries**       | 12    |
+| **Entertainment Figures**   | 12    |
+| **Business & Finance**      | 12    |
+| **Health & Wellness**       | 8     |
+| **Education Topics**        | 3     |
+| **Greetings & Utility**     | 7     |
+| **Personality Modes**       | 5     |
 
 ---
 

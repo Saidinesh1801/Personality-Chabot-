@@ -5,7 +5,7 @@ const LOG_LEVEL = {
   ERROR: 'ERROR',
   WARN: 'WARN',
   INFO: 'INFO',
-  DEBUG: 'DEBUG'
+  DEBUG: 'DEBUG',
 };
 
 const CURRENT_LEVEL = process.env.LOG_LEVEL || 'INFO';
@@ -26,7 +26,7 @@ function log(level, message, data = null) {
 
   const timestamp = formatTime();
   const prefix = `[${timestamp}] ${level}`;
-  
+
   if (data) {
     console.log(`${prefix}:`, message, data);
   } else {
@@ -39,5 +39,5 @@ module.exports = {
   warn: (msg, data) => log('WARN', msg, data),
   info: (msg, data) => log('INFO', msg, data),
   debug: (msg, data) => log('DEBUG', msg, data),
-  LOG_LEVEL
+  LOG_LEVEL,
 };

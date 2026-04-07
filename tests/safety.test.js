@@ -1,6 +1,11 @@
 const { describe, it } = require('node:test');
 const assert = require('node:assert');
-const { checkSafety, readabilityGrade, enhanceMusicResponse, applyHumorGuardrail } = require('../src/safety');
+const {
+  checkSafety,
+  readabilityGrade,
+  enhanceMusicResponse,
+  applyHumorGuardrail,
+} = require('../src/safety');
 
 describe('checkSafety', () => {
   it('should return null for a safe message', () => {

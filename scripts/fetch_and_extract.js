@@ -2,7 +2,7 @@
 
 /**
  * fetch_and_extract.js
- * 
+ *
  * Downloads or reads dataset files and emits cleaned documents with metadata.
  * Output: JSONL file with {id, text, metadata: {source, url, license, etc.}}
  */
@@ -91,7 +91,7 @@ async function fetchStackExchange() {
  */
 async function main() {
   const outputPath = path.join(__dirname, '..', 'data', 'documents.jsonl');
-  
+
   // Ensure data directory exists
   const dataDir = path.dirname(outputPath);
   if (!fs.existsSync(dataDir)) {
@@ -99,12 +99,12 @@ async function main() {
   }
 
   const allDocs = [];
-  
+
   try {
-    allDocs.push(...await fetchWikipedia());
-    allDocs.push(...await fetchBooks());
-    allDocs.push(...await fetchStackExchange());
-    
+    allDocs.push(...(await fetchWikipedia()));
+    allDocs.push(...(await fetchBooks()));
+    allDocs.push(...(await fetchStackExchange()));
+
     // Write JSONL
     const stream = fs.createWriteStream(outputPath);
     for (const doc of allDocs) {

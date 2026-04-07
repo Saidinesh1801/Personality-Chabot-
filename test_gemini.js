@@ -8,35 +8,35 @@ const tests = [
   {
     name: 'Test 1: Simple greeting',
     message: 'Hello',
-    personality: 'Friendly'
+    personality: 'Friendly',
   },
   {
     name: 'Test 2: Known KB question',
     message: 'What is Python?',
-    personality: 'Friendly'
+    personality: 'Friendly',
   },
   {
     name: 'Test 3: General LLM question (Gemini)',
     message: 'What are the benefits of meditation?',
-    personality: 'Friendly'
+    personality: 'Friendly',
   },
   {
     name: 'Test 4: Complex LLM question',
     message: 'Explain quantum computing in simple terms',
-    personality: 'Enthusiastic'
+    personality: 'Enthusiastic',
   },
   {
     name: 'Test 5: Current events',
     message: 'Tell me about the latest space exploration missions',
-    personality: 'Formal'
-  }
+    personality: 'Formal',
+  },
 ];
 
 async function runTest(test) {
   return new Promise((resolve) => {
     const payload = JSON.stringify({
       message: test.message,
-      personality: test.personality
+      personality: test.personality,
     });
 
     const options = {
@@ -46,23 +46,25 @@ async function runTest(test) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Content-Length': payload.length
-      }
+        'Content-Length': payload.length,
+      },
     };
 
     const req = http.request(options, (res) => {
       let data = '';
-      res.on('data', chunk => data += chunk);
+      res.on('data', (chunk) => (data += chunk));
       res.on('end', () => {
         try {
           const result = JSON.parse(data);
           console.log(`✓ ${test.name}`);
           console.log(`  Q: ${test.message}`);
-          console.log(`  A: ${result.reply.substring(0, 200)}${result.reply.length > 200 ? '...' : ''}`);
+          console.log(
+            `  A: ${result.reply.substring(0, 200)}${result.reply.length > 200 ? '...' : ''}`
+          );
           console.log('');
         } catch (e) {
           console.log(`✗ ${test.name}: Parse error`);
-            console.log(`  Response: ${data}`);
+          console.log(`  Response: ${data}`);
         }
         resolve();
       });
@@ -86,7 +88,7 @@ async function runAllTests() {
   console.log('');
 
   for (const test of tests) {
-    await new Promise(r => setTimeout(r, 1500)); // Wait between requests
+    await new Promise((r) => setTimeout(r, 1500)); // Wait between requests
     await runTest(test);
   }
 

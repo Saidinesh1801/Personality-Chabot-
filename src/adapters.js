@@ -7,12 +7,17 @@ async function fetchWikipediaSummary(topic) {
   if (externalKB[key]) return externalKB[key];
   const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(topic)}`;
   try {
-    const resp = await fetch(url, { headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' } });
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' },
+    });
     if (!resp.ok) return null;
     const data = await resp.json();
     if (data && data.extract) {
       externalKB[key] = data.extract;
-      externalKB_sources[key] = data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page ? data.content_urls.desktop.page : `https://en.wikipedia.org/wiki/${encodeURIComponent(topic)}`;
+      externalKB_sources[key] =
+        data.content_urls && data.content_urls.desktop && data.content_urls.desktop.page
+          ? data.content_urls.desktop.page
+          : `https://en.wikipedia.org/wiki/${encodeURIComponent(topic)}`;
       return data.extract;
     }
   } catch (err) {
@@ -25,7 +30,10 @@ async function fetchWikipediaWithSource(topic) {
   const txt = await fetchWikipediaSummary(topic);
   if (!txt) return null;
   const key = topic.toLowerCase().trim();
-  return { text: txt, source: externalKB_sources[key] || `https://en.wikipedia.org/wiki/${encodeURIComponent(topic)}` };
+  return {
+    text: txt,
+    source: externalKB_sources[key] || `https://en.wikipedia.org/wiki/${encodeURIComponent(topic)}`,
+  };
 }
 
 const OMDB_API_KEY = process.env.OMDB_API_KEY || '';
@@ -52,7 +60,10 @@ async function fetchMovieInfo(title) {
           if (data.Plot && data.Plot !== 'N/A') parts.push(`Plot: ${data.Plot}`);
           const summary = parts.join('. ');
           externalKB[key] = summary;
-          externalKB_sources[key] = data.Website && data.Website !== 'N/A' ? data.Website : `https://www.imdb.com/title/${data.imdbID || ''}`;
+          externalKB_sources[key] =
+            data.Website && data.Website !== 'N/A'
+              ? data.Website
+              : `https://www.imdb.com/title/${data.imdbID || ''}`;
           return { text: summary, source: externalKB_sources[key] };
         }
       }
@@ -91,7 +102,7 @@ async function fetchMovieInfo(title) {
     `${title} (TV series)`,
     `${title} (television series)`,
     `${title} (anime)`,
-    `${title} (cartoon)`
+    `${title} (cartoon)`,
   ];
   for (const v of variants) {
     try {
@@ -101,7 +112,7 @@ async function fetchMovieInfo(title) {
         externalKB_sources[key] = wiki.source;
         return { text: wiki.text, source: wiki.source };
       }
-    } catch (err) {
+    } catch (_err) {
       /* continue */
     }
   }
@@ -133,10 +144,12 @@ async function fetchBookInfo(title) {
       const doc = data.docs[0];
       const titleOut = doc.title || title;
       const author = (doc.author_name && doc.author_name.join(', ')) || 'Unknown author';
-      const year = doc.first_publish_year || doc.publish_year && doc.publish_year[0] || 'n/a';
+      const year = doc.first_publish_year || (doc.publish_year && doc.publish_year[0]) || 'n/a';
       const editions = doc.edition_count || 'n/a';
       const text = `${titleOut} (${year}) by ${author}. Editions: ${editions}.`;
-      const source = doc.key ? `https://openlibrary.org${doc.key}` : `https://openlibrary.org/search?q=${encodeURIComponent(title)}`;
+      const source = doc.key
+        ? `https://openlibrary.org${doc.key}`
+        : `https://openlibrary.org/search?q=${encodeURIComponent(title)}`;
       externalKB[key] = text;
       externalKB_sources[key] = source;
       return { text, source };
@@ -153,14 +166,20 @@ async function fetchMusicInfo(title) {
   if (externalKB[key]) return { text: externalKB[key], source: externalKB_sources[key] };
   try {
     const url = `https://musicbrainz.org/ws/2/recording?query=${encodeURIComponent('recording:"' + title + '"')}&fmt=json&limit=1`;
-    const resp = await fetch(url, { headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' } });
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' },
+    });
     if (!resp.ok) return null;
     const data = await resp.json();
     if (data && data.recordings && data.recordings.length > 0) {
       const rec = data.recordings[0];
       const name = rec.title || title;
-      const artist = rec['artist-credit'] && rec['artist-credit'][0] && rec['artist-credit'][0].name ? rec['artist-credit'][0].name : 'Unknown artist';
-      const release = rec.releases && rec.releases[0] && rec.releases[0].date ? rec.releases[0].date : 'n/a';
+      const artist =
+        rec['artist-credit'] && rec['artist-credit'][0] && rec['artist-credit'][0].name
+          ? rec['artist-credit'][0].name
+          : 'Unknown artist';
+      const release =
+        rec.releases && rec.releases[0] && rec.releases[0].date ? rec.releases[0].date : 'n/a';
       const text = `${name} by ${artist} (${release}). MusicBrainz ID: ${rec.id}`;
       const source = `https://musicbrainz.org/recording/${rec.id}`;
       externalKB[key] = text;
@@ -181,7 +200,9 @@ async function fetchSportsInfo(name) {
   const apiKey = process.env.SPORTSDB_API_KEY || '1';
   try {
     const teamUrl = `https://www.thesportsdb.com/api/v1/json/${apiKey}/searchteams.php?t=${encodeURIComponent(name)}`;
-    const r1 = await fetch(teamUrl, { headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' } });
+    const r1 = await fetch(teamUrl, {
+      headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' },
+    });
     if (r1 && r1.ok) {
       const j = await r1.json();
       if (j && j.teams && j.teams.length > 0) {
@@ -205,7 +226,9 @@ async function fetchSportsInfo(name) {
 
   try {
     const playerUrl = `https://www.thesportsdb.com/api/v1/json/${apiKey}/searchplayers.php?p=${encodeURIComponent(name)}`;
-    const r2 = await fetch(playerUrl, { headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' } });
+    const r2 = await fetch(playerUrl, {
+      headers: { 'User-Agent': 'PersonalityChatbot/1.0 (https://localhost)' },
+    });
     if (r2 && r2.ok) {
       const j2 = await r2.json();
       if (j2 && j2.player && j2.player.length > 0) {
@@ -231,8 +254,8 @@ async function fetchSportsInfo(name) {
 }
 
 const adapters = [
-  { name: 'book', fn: fetchBookInfo, hints: ['book','novel','author'] },
-  { name: 'music', fn: fetchMusicInfo, hints: ['song','album','music','artist'] }
+  { name: 'book', fn: fetchBookInfo, hints: ['book', 'novel', 'author'] },
+  { name: 'music', fn: fetchMusicInfo, hints: ['song', 'album', 'music', 'artist'] },
 ];
 
 async function runAdapters(topic, lowerMsg) {
@@ -242,7 +265,7 @@ async function runAdapters(topic, lowerMsg) {
         try {
           const res = await adapter.fn(topic);
           if (res) return res;
-        } catch (err) {
+        } catch (_err) {
           /* ignore */
         }
       }
@@ -253,7 +276,7 @@ async function runAdapters(topic, lowerMsg) {
       try {
         const res = await adapter.fn(topic);
         if (res) return res;
-      } catch (err) {
+      } catch (_err) {
         /* ignore */
       }
     }

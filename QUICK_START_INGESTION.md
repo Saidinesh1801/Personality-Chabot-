@@ -40,6 +40,7 @@ npm run ingest:all
 ```
 
 This runs:
+
 1. `fetch_and_extract.js` → downloads/parses datasets → `data/documents.jsonl`
 2. `chunker.js` → splits into passages → `data/chunks.jsonl`
 3. `embed_and_index.js` → computes embeddings → `data/vectors.json`
@@ -90,7 +91,7 @@ async function getEmbeddings(texts) {
     model: 'text-embedding-3-small',
     input: texts,
   });
-  return response.data.map(d => d.embedding);
+  return response.data.map((d) => d.embedding);
 }
 ```
 

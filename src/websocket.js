@@ -14,7 +14,9 @@ function setupWebSocket(server) {
     let authed = false;
 
     ws.isAlive = true;
-    ws.on('pong', () => { ws.isAlive = true; });
+    ws.on('pong', () => {
+      ws.isAlive = true;
+    });
 
     ws.on('message', (data) => {
       try {
@@ -58,7 +60,7 @@ function setupWebSocket(server) {
   });
 
   const interval = setInterval(() => {
-    wss.clients.forEach(ws => {
+    wss.clients.forEach((ws) => {
       if (!ws.isAlive) return ws.terminate();
       ws.isAlive = false;
       ws.ping();
@@ -107,7 +109,7 @@ function sendToUser(userId, data) {
 
 function broadcastTyping(chatId, userId, isTyping) {
   const chats = db.getAllChats(userId);
-  const chat = chats.find(c => c.id === chatId);
+  const chat = chats.find((c) => c.id === chatId);
   if (!chat) return;
 
   for (const [uid, client] of clients) {

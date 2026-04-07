@@ -14,34 +14,42 @@ Open http://localhost:3000
 ## Features
 
 ### AI Models
+
 - **Gemini** (free) — set `GEMINI_API_KEY` in `.env`
 - **OpenAI** — set `OPENAI_API_KEY` or `GROQ_API_KEY`
 - **Local LLM** — set `OLLAMA_URL`
 - Falls back to template responses when no AI is configured
 
 ### Personality Modes
+
 Five styles: **Friendly**, **Formal**, **Sarcastic**, **Enthusiastic**, **Wise**
 
 ### Feature Modes
-| Mode | Shortcut | Description |
-|------|----------|-------------|
-| Web Search | Button | Live web search (DuckDuckGo / SerpAPI) |
-| Thinking | Button | Step-by-step reasoning |
-| Deep Research | Button | Research-quality responses |
-| Study | Button | Teacher-style explanations |
-| Quizzes | Button | Auto-generated MCQ quizzes |
-| Voice | Button | **Full voice conversation** |
+
+| Mode          | Shortcut | Description                            |
+| ------------- | -------- | -------------------------------------- |
+| Web Search    | Button   | Live web search (DuckDuckGo / SerpAPI) |
+| Thinking      | Button   | Step-by-step reasoning                 |
+| Deep Research | Button   | Research-quality responses             |
+| Study         | Button   | Teacher-style explanations             |
+| Quizzes       | Button   | Auto-generated MCQ quizzes             |
+| Voice         | Button   | **Full voice conversation**            |
 
 ### Voice Mode
+
 Tap the microphone for continuous voice-in, voice-out conversations. The bot listens, thinks, and responds with spoken replies. Say "bye" or "goodbye" to exit. Supports all installed system voices.
 
 ### Image Generation
+
 Ask the bot to "generate an image of..." or use the "Generate image" button. Supports:
+
 - **DALL-E 3** (set `OPENAI_API_KEY`)
 - **Leonardo.ai** (set `LEONARDO_API_KEY`)
 
 ### Plugin System
+
 Built-in plugins:
+
 - **Calculator** — evaluates math expressions
 - **Wikipedia Lookup** — fetches summaries
 - **Reminder** — sets timers ("remind me in 10 minutes")
@@ -49,14 +57,17 @@ Built-in plugins:
 Custom plugins: drop `.js` files in `plugins/` directory. See `plugins/README.md` for the API.
 
 ### Team Collaboration
+
 Create teams, invite members by email, and share chats. Members see shared conversations in real-time via WebSocket.
 
 ### Slash Commands
+
 `/new`, `/n` | `/search`, `/s` | `/clear`, `/c` | `/theme`, `/t` | `/help`, `/h`
 
 Keyboard: `Ctrl+Shift+N`, `Ctrl+/`, `Esc`
 
 ### Other Features
+
 - RAG-based knowledge with vector search
 - Semantic chat search across all conversations
 - Conversation branching (fork chats)

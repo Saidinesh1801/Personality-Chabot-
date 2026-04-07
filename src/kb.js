@@ -33,11 +33,7 @@ function findInKB(message, kbMap) {
     }
   }
 
-  const patterns = [
-    /^what is\s+(.+)$/,
-    /^who is\s+(.+)$/,
-    /^who's\s+(.+)$/,
-  ];
+  const patterns = [/^what is\s+(.+)$/, /^who is\s+(.+)$/, /^who's\s+(.+)$/];
   for (const pat of patterns) {
     const m = msg.match(pat);
     if (m) {

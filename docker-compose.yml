@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  nexusai:
+    build: .
+    ports:
+      - '52738:52738'
+    environment:
+      - NODE_ENV=production
+      - PORT=52738
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GROQ_API_KEY=${GROQ_API_KEY:-}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - SERP_API_KEY=${SERP_API_KEY:-}
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-}
+      - SMTP_HOST=${SMTP_HOST:-smtp.gmail.com}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+    volumes:
+      - ./data:/app/data
+      - ./data/nexusai.db:/app/data/nexusai.db
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:52738/api/health']
+      interval: 30s
+      timeout: 10s
+      retries: 3

@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-"use strict";
+'use strict';
 
 // run_local_test.js
 // Tries to detect and validate a local LLM HTTP endpoint (Ollama, llama.cpp frontends, etc.)
 
 const DEFAULT_URLS = [
-  'http://localhost:11434/api/chat',   // Ollama default
+  'http://localhost:11434/api/chat', // Ollama default
   'http://localhost:11434/v1/chat/completions',
   'http://localhost:11434/v1/completions',
   'http://localhost:8080/v1/chat/completions',
@@ -25,7 +25,7 @@ async function probeUrl(url) {
       model: process.env.LOCAL_LLM_MODEL || process.env.OLLAMA_MODEL || 'test-model',
       messages: [
         { role: 'system', content: 'You are a helpful assistant.' },
-        { role: 'user', content: 'Say hello in one short sentence.' }
+        { role: 'user', content: 'Say hello in one short sentence.' },
       ],
       temperature: 0.2,
       max_tokens: 64,

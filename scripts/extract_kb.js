@@ -23,7 +23,9 @@ const uniqueEntries = Object.keys(deduped).length;
 const duplicatesRemoved = totalEntries - uniqueEntries;
 
 const counts = {};
-allEntries.forEach(k => { counts[k] = (counts[k] || 0) + 1; });
+allEntries.forEach((k) => {
+  counts[k] = (counts[k] || 0) + 1;
+});
 const dupKeys = Object.entries(counts).filter(([k, v]) => v > 1);
 
 console.log('Total entries (including duplicates):', totalEntries);

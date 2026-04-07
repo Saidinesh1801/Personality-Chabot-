@@ -5,7 +5,9 @@ const searchCache = new Map();
 
 async function cosineSim(a, b) {
   if (!a || !b || a.length !== b.length) return 0;
-  let dot = 0, na = 0, nb = 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
   for (let i = 0; i < a.length; i++) {
     dot += a[i] * b[i];
     na += a[i] * a[i];
@@ -17,7 +19,9 @@ async function cosineSim(a, b) {
 function textToVec(text) {
   const words = (text || '').toLowerCase().match(/\b[a-z]{2,}\b/g) || [];
   const freq = {};
-  words.forEach(w => { freq[w] = (freq[w] || 0) + 1; });
+  words.forEach((w) => {
+    freq[w] = (freq[w] || 0) + 1;
+  });
   const vec = new Array(512).fill(0);
   let i = 0;
   const keys = Object.keys(freq).sort();
@@ -26,7 +30,7 @@ function textToVec(text) {
     if (i >= keys.length * 2) break;
   }
   const norm = Math.sqrt(vec.reduce((s, v) => s + v * v, 0));
-  return norm > 0 ? vec.map(v => v / norm) : vec;
+  return norm > 0 ? vec.map((v) => v / norm) : vec;
 }
 
 async function searchChats(userId, query, topK = 5) {
@@ -51,7 +55,7 @@ async function searchChats(userId, query, topK = 5) {
     const fullChat = db.getChat(chat.id, userId);
     if (!fullChat || !fullChat.messages || fullChat.messages.length === 0) continue;
 
-    const combinedText = fullChat.messages.map(m => m.text).join(' ');
+    const combinedText = fullChat.messages.map((m) => m.text).join(' ');
     const chatVec = textToVec(combinedText);
 
     let score = cosineSim(queryVec, chatVec);
@@ -63,7 +67,7 @@ async function searchChats(userId, query, topK = 5) {
 
     const words = query.toLowerCase().split(/\s+/);
     const chatLower = combinedText.toLowerCase();
-    const wordMatches = words.filter(w => chatLower.includes(w)).length;
+    const wordMatches = words.filter((w) => chatLower.includes(w)).length;
     const keywordBoost = words.length > 0 ? (wordMatches / words.length) * 0.3 : 0;
 
     score = Math.min(1, score + keywordBoost);

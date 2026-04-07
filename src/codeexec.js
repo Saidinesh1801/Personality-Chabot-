@@ -7,10 +7,18 @@ function runJavaScript(code) {
   const logs = [];
   const sandbox = {
     console: {
-      log: (...args) => { if (logs.length < MAX_OUTPUT_LINES) logs.push(args.map(String).join(' ')); },
-      error: (...args) => { if (logs.length < MAX_OUTPUT_LINES) logs.push('Error: ' + args.map(String).join(' ')); },
-      warn: (...args) => { if (logs.length < MAX_OUTPUT_LINES) logs.push('Warning: ' + args.map(String).join(' ')); },
-      info: (...args) => { if (logs.length < MAX_OUTPUT_LINES) logs.push(args.map(String).join(' ')); },
+      log: (...args) => {
+        if (logs.length < MAX_OUTPUT_LINES) logs.push(args.map(String).join(' '));
+      },
+      error: (...args) => {
+        if (logs.length < MAX_OUTPUT_LINES) logs.push('Error: ' + args.map(String).join(' '));
+      },
+      warn: (...args) => {
+        if (logs.length < MAX_OUTPUT_LINES) logs.push('Warning: ' + args.map(String).join(' '));
+      },
+      info: (...args) => {
+        if (logs.length < MAX_OUTPUT_LINES) logs.push(args.map(String).join(' '));
+      },
     },
     Math,
     Date,
@@ -60,7 +68,7 @@ function extractCodeBlocks(text) {
     const parts = text.split(singleLine);
     if (parts.length > 1) {
       for (const part of parts) {
-        if (!part.match(/^[a-z]+$/i) && part.includes('=') || part.includes('function')) {
+        if ((!part.match(/^[a-z]+$/i) && part.includes('=')) || part.includes('function')) {
           blocks.push(part.trim());
         }
       }
@@ -78,14 +86,25 @@ function processCodeBlocks(text) {
     results.push(runJavaScript(block));
   }
 
-  const resultSections = results.map((r, i) => {
-    const label = `// Code block ${i + 1} output:\n${r.output}`;
-    return r.success
-      ? `<pre class="code-output success">${label}</pre>`
-      : `<pre class="code-output error">${label}</pre>`;
-  }).join('\n');
+  const resultSections = results
+    .map((r, i) => {
+      const label = `// Code block ${i + 1} output:\n${r.output}`;
+      return r.success
+        ? `<pre class="code-output success">${label}</pre>`
+        : `<pre class="code-output error">${label}</pre>`;
+    })
+    .join('\n');
 
-  return text + '\n\n<details class="code-execution"><summary>Run code (' + blocks.length + ' block' + (blocks.length > 1 ? 's' : '') + ')</summary>\n' + resultSections + '\n</details>';
+  return (
+    text +
+    '\n\n<details class="code-execution"><summary>Run code (' +
+    blocks.length +
+    ' block' +
+    (blocks.length > 1 ? 's' : '') +
+    ')</summary>\n' +
+    resultSections +
+    '\n</details>'
+  );
 }
 
 module.exports = { runJavaScript, extractCodeBlocks, processCodeBlocks };

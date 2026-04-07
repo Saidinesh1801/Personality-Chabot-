@@ -21,7 +21,7 @@ describe('cosineSimilarity', () => {
 
   it('should handle opposite vectors', () => {
     const sim = cosineSimilarity([1, 0], [-1, 0]);
-    assert.ok(Math.abs(sim - (-1)) < 1e-9);
+    assert.ok(Math.abs(sim - -1) < 1e-9);
   });
 });
 
@@ -29,7 +29,7 @@ describe('getMockEmbedding', () => {
   it('should return an array of 768 numbers', () => {
     const emb = getMockEmbedding('test input');
     assert.strictEqual(emb.length, 768);
-    assert.ok(emb.every(v => typeof v === 'number'));
+    assert.ok(emb.every((v) => typeof v === 'number'));
   });
 
   it('should return deterministic results for the same input', () => {
