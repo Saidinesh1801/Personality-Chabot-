@@ -549,10 +549,10 @@ let activeDocName = null;
 
 // ===== Theme =====
 function initTheme() {
-  if (!appSettings?.theme || appSettings.theme === 'system' || appSettings.theme === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark');
-  } else {
+  if (!appSettings?.theme || appSettings.theme === 'system') {
     document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', appSettings.theme);
   }
 }
 
@@ -975,28 +975,50 @@ function renderMarkdown(text) {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i];
     const hasPipe = line.includes('|');
-    const isSeparator = /^\|?[\s\-:]+\|[\s\-:]+\|?$/.test(line.trim());
 
-    if (hasPipe && !isSeparator) {
+    if (hasPipe) {
       tableLines.push(line);
       inTable = true;
     } else {
-      if (inTable && tableLines.length >= 2) {
-        // Convert accumulated table lines to HTML
-        const headerCells = tableLines[0].split('|').filter((c) => c.trim());
-        if (headerCells.length >= 2) {
-          const ths = headerCells.map((c) => `<th>${c.trim()}</th>`).join('');
-          const rows = tableLines
-            .slice(1)
-            .map((row) => {
-              const cells = row.split('|').filter((c) => c !== undefined);
-              return '<tr>' + cells.map((c) => `<td>${c.trim()}</td>`).join('') + '</tr>';
-            })
-            .join('');
-          result.push(
-            `<table class="markdown-table"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`
-          );
+      if (inTable && tableLines.length >= 3) {
+        // We need at least header, separator, and one data row
+        const headerLine = tableLines[0];
+        const separatorLine = tableLines[1];
+
+        // Check if separator line looks like a table separator
+        const isValidSeparator = /^\|[\s\-\|:]+\|$/.test(separatorLine) && separatorLine.includes('-');
+
+        if (isValidSeparator) {
+          // Parse header
+          const headerCells = headerLine.split('|').map(c => c.trim()).filter(c => c);
+          if (headerCells.length >= 2) {
+            const ths = headerCells.map((c) => `<th>${c}</th>`).join('');
+
+            // Parse data rows (skip header and separator)
+            const dataRows = tableLines.slice(2);
+            const rows = dataRows
+              .map((row) => {
+                const cells = row.split('|').map(c => c.trim()).filter(c => c !== '');
+                if (cells.length === headerCells.length) {
+                  return '<tr>' + cells.map((c) => `<td>${c}</td>`).join('') + '</tr>';
+                }
+                return null; // Skip malformed rows
+              })
+              .filter(row => row !== null)
+              .join('');
+
+            if (rows) {
+              result.push(
+                `<table class="markdown-table"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`
+              );
+            } else {
+              result.push(...tableLines);
+            }
+          } else {
+            result.push(...tableLines);
+          }
         } else {
+          // Not a valid table, just output the lines
           result.push(...tableLines);
         }
         tableLines = [];
@@ -1010,20 +1032,42 @@ function renderMarkdown(text) {
   }
 
   // Handle any remaining table lines
-  if (inTable && tableLines.length >= 2) {
-    const headerCells = tableLines[0].split('|').filter((c) => c.trim());
-    if (headerCells.length >= 2) {
-      const ths = headerCells.map((c) => `<th>${c.trim()}</th>`).join('');
-      const rows = tableLines
-        .slice(1)
-        .map((row) => {
-          const cells = row.split('|').filter((c) => c !== undefined);
-          return '<tr>' + cells.map((c) => `<td>${c.trim()}</td>`).join('') + '</tr>';
-        })
-        .join('');
-      result.push(
-        `<table class="markdown-table"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`
-      );
+  if (inTable && tableLines.length >= 3) {
+    const headerLine = tableLines[0];
+    const separatorLine = tableLines[1];
+
+    // Check if separator line looks like a table separator
+    const isValidSeparator = /^\|[\s\-\|:]+\|$/.test(separatorLine) && separatorLine.includes('-');
+
+    if (isValidSeparator) {
+      // Parse header
+      const headerCells = headerLine.split('|').map(c => c.trim()).filter(c => c);
+      if (headerCells.length >= 2) {
+        const ths = headerCells.map((c) => `<th>${c}</th>`).join('');
+
+        // Parse data rows (skip header and separator)
+        const dataRows = tableLines.slice(2);
+        const rows = dataRows
+          .map((row) => {
+            const cells = row.split('|').map(c => c.trim()).filter(c => c !== '');
+            if (cells.length === headerCells.length) {
+              return '<tr>' + cells.map((c) => `<td>${c}</td>`).join('') + '</tr>';
+            }
+            return null; // Skip malformed rows
+          })
+          .filter(row => row !== null)
+          .join('');
+
+        if (rows) {
+          result.push(
+            `<table class="markdown-table"><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`
+          );
+        } else {
+          result.push(...tableLines);
+        }
+      } else {
+        result.push(...tableLines);
+      }
     } else {
       result.push(...tableLines);
     }
@@ -1910,19 +1954,6 @@ micBtn.addEventListener('click', () => {
   }
 });
 
-// ===== Search Chats =====
-searchInput.addEventListener('input', () => {
-  const query = searchInput.value.toLowerCase().trim();
-  const items = sidebarHistory.querySelectorAll('.chat-history-item');
-  items.forEach((item) => {
-    if (!query || item.textContent.toLowerCase().includes(query)) {
-      item.style.display = '';
-    } else {
-      item.style.display = 'none';
-    }
-  });
-});
-
 // ===== Voice Search for Chats =====
 var voiceSearchRecognition = null;
 
@@ -2443,7 +2474,6 @@ document.addEventListener('keydown', (e) => {
 loadSettings();
 applySettings();
 initSuggestions();
-initTheme();
 setTimeout(() => {
   if (window.initVoiceSearch) initVoiceSearch();
   if (window.initChatVoiceInput) initChatVoiceInput();
