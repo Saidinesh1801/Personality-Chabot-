@@ -29,6 +29,42 @@ const LOCAL_LLM_URL = process.env.LOCAL_LLM_URL || process.env.OLLAMA_URL || nul
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+const GROQ_PROMPT_CHAR_LIMIT = 12000;
+
+function truncatePromptText(text, maxLength) {
+  if (text.length <= maxLength) return text;
+  const marker = '\n[Earlier context shortened to fit the model limit]\n';
+  if (maxLength <= marker.length) return text.slice(0, maxLength);
+  const available = Math.max(0, maxLength - marker.length);
+  const headLength = Math.ceil(available / 2);
+  const tailLength = Math.floor(available / 2);
+  return text.slice(0, headLength) + marker + (tailLength ? text.slice(-tailLength) : '');
+}
+
+function buildGroqMessages(system, user, history = []) {
+  const safeSystem = truncatePromptText(system, Math.min(system.length, 3000));
+  const safeUser = truncatePromptText(user, Math.max(1000, GROQ_PROMPT_CHAR_LIMIT - safeSystem.length));
+  let remaining = Math.max(0, GROQ_PROMPT_CHAR_LIMIT - safeSystem.length - safeUser.length);
+  const recentHistory = [];
+
+  for (const msg of history.slice(-4).reverse()) {
+    if (remaining <= 0) break;
+    const text = String(msg.text || '');
+    const content = truncatePromptText(text, remaining);
+    if (content) recentHistory.unshift({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content,
+    });
+    remaining -= content.length;
+  }
+
+  return [
+    { role: 'system', content: safeSystem },
+    ...recentHistory,
+    { role: 'user', content: safeUser },
+  ];
+}
+
 const TEMPLATE_RESPONSES = {
   greeting: [
     "Hello! I'm your AI assistant. I can help with a wide range of tasks — just ask me anything!",
@@ -342,25 +378,26 @@ async function streamAnswer(query, context, history, personalityPrompt, options 
   // Try Groq streaming as fallback
   if (openaiClient) {
     try {
-      const msgs = [];
-      if (history && history.length > 0) {
-        for (const msg of history.slice(-4)) {
-          msgs.push({ role: msg.role === 'user' ? 'user' : 'assistant', content: msg.text });
-        }
-      }
-      msgs.push({ role: 'user', content: user });
-
+      const messages = buildGroqMessages(system, user, history);
       const stream = await openaiClient.chat.completions.create({
         model: openaiModel,
-        messages: [{ role: 'system', content: system }, ...msgs],
-        max_tokens: 1024,
+        messages,
+        max_tokens: 2048,
         temperature: 0.7,
         stream: true,
       });
 
+      let finishReason = null;
       for await (const chunk of stream) {
+        finishReason = chunk.choices?.[0]?.finish_reason || finishReason;
         const text = chunk.choices?.[0]?.delta?.content;
         if (text) onChunk(text);
+      }
+      if (finishReason === 'length') {
+        const err = new Error("The response reached Groq's output limit and may be incomplete.");
+        if (onError) onError(err);
+        else onDone();
+        return;
       }
       onDone();
       return;
@@ -384,4 +421,4 @@ function hasLLM() {
   return !!(GEMINI_API_KEY || openaiClient || LOCAL_LLM_URL);
 }
 
-module.exports = { generateAnswer, streamAnswer, hasLLM, buildPrompts };
+module.exports = { generateAnswer, streamAnswer, hasLLM, buildPrompts, buildGroqMessages };
