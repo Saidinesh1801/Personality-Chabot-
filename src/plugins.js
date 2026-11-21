@@ -76,16 +76,31 @@ async function matchAndExecute(message, context = {}) {
   const lower = message.toLowerCase();
   const results = [];
   const triggers = getAllTriggers();
+  const matchedPlugins = new Map();
 
   for (const [trigger, pluginIds] of Object.entries(triggers)) {
     if (lower.includes(trigger)) {
       for (const id of pluginIds) {
-        const result = await executePlugin(id, { message, trigger }, context);
-        if (result.success && result.result) {
-          results.push({ pluginId: id, result: result.result });
-        }
+        const previous = matchedPlugins.get(id);
+        if (!previous || trigger.length > previous.length) matchedPlugins.set(id, trigger);
       }
     }
+  }
+
+  const priority = ['weather', 'calculator', 'reminder'];
+  const orderedPlugins = Array.from(matchedPlugins.entries()).sort(([a], [b]) => {
+    const rankA = priority.indexOf(a);
+    const rankB = priority.indexOf(b);
+    return (rankA < 0 ? priority.length : rankA) - (rankB < 0 ? priority.length : rankB);
+  });
+
+  for (const [id, trigger] of orderedPlugins) {
+    const result = await executePlugin(id, { message, trigger }, context);
+    if (!result.success || !result.result) continue;
+
+    const pluginResult = { pluginId: id, result: result.result };
+    if (priority.includes(id) && result.result.text) return [pluginResult];
+    results.push(pluginResult);
   }
 
   return results;
@@ -211,28 +226,43 @@ function registerBuiltInPlugins() {
     author: 'Built-in',
     triggers: ['weather in', 'weather at', "what's the weather", 'what is the weather', 'temperature in', 'forecast for', 'is it raining', 'will it rain', 'how is the weather', 'weather like'],
     async execute({ message }) {
-      const cityMatch = message.match(/weather\s+(?:in|at|for)\s+([A-Za-z\s]+?)(?:\?|$|\.|,)/i)
-        || message.match(/temperature\s+(?:in|at|for)\s+([A-Za-z\s]+?)(?:\?|$|\.)/i)
-        || message.match(/(?:rain(?:ing|s)?|forecast)\s+(?:in|at|for)\s+([A-Za-z\s]+?)(?:\?|$|\.)/i)
-        || message.match(/what(?:'s| is) the weather (?:in|at|for)?\s*([A-Za-z\s]+?)(?:\?|$|\.)/i);
+      const cityMatch = message.match(/\b(?:weather|temperature|forecast|rain(?:ing|s)?)\b.*?\bin\s+([^?.!]+)/i)
+        || message.match(/\b(?:weather|forecast|rain(?:ing|s)?)\b.*?\bat\s+([^?.!]+)/i)
+        || message.match(/\b(?:weather|forecast)\b.*?\bfor\s+([^?.!]+)/i);
       if (!cityMatch) return { text: null };
-      const city = cityMatch[1].trim();
+      const city = cityMatch[1]
+        .trim()
+        .replace(/\s+(?:today|tomorrow|right now|currently)$/i, '')
+        .trim()
+        .replace(/,$/, '');
       if (city.length < 2 || city.length > 100) return { text: null };
 
       try {
-        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+        const locationParts = city.split(',').map(part => part.trim()).filter(Boolean);
+        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(locationParts[0])}&count=10&language=en&format=json`);
         if (!geoRes.ok) throw new Error('Geocoding failed');
         const geoData = await geoRes.json();
         if (!geoData.results || geoData.results.length === 0) {
           return { text: `I couldn't find a location matching "${city}". Try a more specific city name.` };
         }
-        const { latitude, longitude, name, country, country_code } = geoData.results[0];
+        const qualifiers = locationParts.slice(1).map(part => part.toLowerCase());
+        const rankedResults = geoData.results.map(result => {
+          const fields = [result.admin1, result.admin2, result.admin3, result.country, result.country_code]
+            .filter(Boolean)
+            .map(value => value.toLowerCase());
+          const score = qualifiers.filter(qualifier => fields.some(field => field.includes(qualifier))).length;
+          return { result, score };
+        }).sort((a, b) => b.score - a.score);
+        const { latitude, longitude, name, admin1, admin2, country, country_code } = rankedResults[0].result;
+        const isFahrenheit = country_code === 'US';
+        const temperatureUnit = isFahrenheit ? '°F' : '°C';
+        const temperatureParam = isFahrenheit ? '&temperature_unit=fahrenheit' : '&temperature_unit=celsius';
 
         const weatherRes = await fetch(
           `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
           `&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m,precipitation` +
           `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max` +
-          `&timezone=auto&forecast_days=3&temperature_unit=fahrenheit`
+          `&timezone=auto&forecast_days=3${temperatureParam}`
         );
         if (!weatherRes.ok) throw new Error('Weather fetch failed');
         const w = await weatherRes.json();
@@ -247,9 +277,7 @@ function registerBuiltInPlugins() {
         const wind = current.wind_speed_10m;
         const precip = current.precipitation;
 
-        const location = country_code
-          ? `${name}, ${country} (${country_code.toUpperCase()})`
-          : `${name}, ${country || 'Unknown'}`;
+        const location = [name, admin2, admin1, country].filter((part, index, parts) => part && parts.indexOf(part) === index).join(', ');
 
         let forecast = '';
         if (daily && daily.time && daily.time.length > 1) {
@@ -264,7 +292,7 @@ function registerBuiltInPlugins() {
             const min = Math.round(daily.temperature_2m_min[i]);
             const prob = daily.precipitation_probability_max[i];
             const cond = getWeatherCondition(code);
-            parts.push(`**${dayName}**: ${cond}, ${min}–${max}°F (${prob > 20 ? prob + '% rain chance' : 'low rain chance'})`);
+            parts.push(`**${dayName}**: ${cond}, ${min}–${max}${temperatureUnit} (${prob > 20 ? prob + '% rain chance' : 'low rain chance'})`);
           }
           forecast = '\n\n**3-Day Forecast:**\n' + parts.join('\n');
         }
@@ -272,7 +300,7 @@ function registerBuiltInPlugins() {
         const rainInfo = precip > 0 ? `\n\nCurrently **raining** (${precip}mm precipitation).` : precip === 0 ? '\n\nNo precipitation right now.' : '';
 
         return {
-          text: `## Weather in ${location}\n\n**Currently**: ${condition}\n**Temperature**: ${Math.round(current.temperature_2m)}°F (feels like ${Math.round(feelsLike)}°F)\n**Humidity**: ${humidity}%\n**Wind**: ${Math.round(wind)} km/h${rainInfo}${forecast}`,
+          text: `## Weather in ${location}\n\n**Currently**: ${condition}\n**Temperature**: ${Math.round(current.temperature_2m)}${temperatureUnit} (feels like ${Math.round(feelsLike)}${temperatureUnit})\n**Humidity**: ${humidity}%\n**Wind**: ${Math.round(wind)} km/h${rainInfo}${forecast}`,
         };
       } catch (err) {
         console.error('[Weather Plugin] Error:', err.message);
