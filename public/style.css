@@ -701,6 +701,8 @@ body {
   border: 1px solid var(--border);
   padding: 8px 12px;
   text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
 }
 .msg-text th {
   background: rgba(0, 212, 255, 0.06);

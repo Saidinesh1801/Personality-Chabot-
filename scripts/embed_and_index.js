@@ -17,7 +17,7 @@ require('dotenv').config();
 const BATCH_SIZE = 10;  // chunks to batch per API call
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || null;
-const EMBEDDING_MODEL = 'text-embedding-004';
+const EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
 const EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent`;
 
 /**
@@ -41,6 +41,16 @@ async function getGeminiEmbedding(text) {
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
+function getMockEmbedding(text) {
+  const hash = text.split('').reduce((h, c) => ((h << 5) - h) + c.charCodeAt(0), 0);
+  const seed = Math.abs(hash);
+  const rng = (i) => {
+    const x = Math.sin(seed + i) * 10000;
+    return x - Math.floor(x);
+  };
+  return Array(768).fill(0).map((_, i) => rng(i) * 2 - 1);
+}
+
 /**
  * Compute embeddings for a batch of texts using Gemini or mock fallback
  */
@@ -55,15 +65,14 @@ async function getEmbeddings(texts) {
         await sleep(100); // small delay to respect rate limits
       } catch (err) {
         console.error(`   ⚠️  Embedding failed: ${err.message}`);
-        // Fallback to mock for this text
-        results.push(Array(768).fill(0).map(() => Math.random()));
+        results.push(getMockEmbedding(text));
       }
     }
     return results;
   }
 
   console.log(`   [mock] embedding ${texts.length} texts (no GEMINI_API_KEY set)...`);
-  return texts.map(() => Array(768).fill(0).map(() => Math.random()));
+  return texts.map(getMockEmbedding);
 }
 
 /**

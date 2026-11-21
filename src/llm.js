@@ -1,5 +1,5 @@
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || null;
-const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3.5-flash-lite';
 const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 
 let openaiClient = null;
@@ -12,7 +12,7 @@ try {
       apiKey: process.env.GROQ_API_KEY,
       baseURL: 'https://api.groq.com/openai/v1',
     });
-    openaiModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+    openaiModel = process.env.GROQ_MODEL || 'openai/gpt-oss-120b';
     console.log(`[LLM] Groq connected (${openaiModel})`);
   } else if (process.env.OPENAI_API_KEY) {
     openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -103,7 +103,7 @@ async function callGemini(systemMessage, userMessage, history, options = {}) {
   const payload = {
     systemInstruction: { parts: [{ text: systemMessage }] },
     contents,
-    generationConfig: { maxOutputTokens: options.image ? 8192 : (options.hasContext ? 8192 : 2048), temperature: 0.7 },
+    generationConfig: { maxOutputTokens: options.image ? 8192 : (options.hasContext ? 8192 : 4096), temperature: 0.7 },
   };
   if (!options.image) payload.tools = [{ googleSearch: {} }];
   const body = JSON.stringify(payload);
@@ -263,10 +263,11 @@ async function streamAnswer(query, context, history, personalityPrompt, options 
     const payload = {
       systemInstruction: { parts: [{ text: system }] },
       contents,
-      generationConfig: { maxOutputTokens: options.image ? 8192 : (context ? 8192 : 2048), temperature: 0.7 },
+      generationConfig: { maxOutputTokens: options.image ? 8192 : (context ? 8192 : 4096), temperature: 0.7 },
     };
     if (!options.image) payload.tools = [{ googleSearch: {} }];
 
+    let geminiChunkSent = false;
     try {
       const resp = await fetch(url, {
         method: 'POST',
@@ -277,39 +278,64 @@ async function streamAnswer(query, context, history, personalityPrompt, options 
       if (!resp.ok) {
         const errBody = await resp.text().catch(() => '');
         console.error(`[Gemini Stream] HTTP ${resp.status}: ${errBody.slice(0, 300)}`);
+        throw new Error(`Gemini returned HTTP ${resp.status}`);
       }
 
+      if (!resp.body) throw new Error('Gemini stream returned no response body');
       const reader = resp.body;
       const decoder = new TextDecoder();
       let buffer = '';
+      let finishReason = null;
+
+      const handleGeminiLine = (line) => {
+        if (!line.startsWith('data: ')) return;
+        const jsonStr = line.slice(6).trim();
+        if (!jsonStr) return;
+        const data = JSON.parse(jsonStr);
+        const candidate = data?.candidates?.[0];
+        if (candidate?.finishReason) finishReason = candidate.finishReason;
+        const text = candidate?.content?.parts?.map(part => part.text || '').join('');
+        if (text) {
+          geminiChunkSent = true;
+          onChunk(text);
+        }
+      };
 
       for await (const chunk of reader) {
         buffer += decoder.decode(chunk, { stream: true });
         const lines = buffer.split('\n');
         buffer = lines.pop() || '';
         for (const line of lines) {
-          if (!line.startsWith('data: ')) continue;
-          const jsonStr = line.slice(6).trim();
-          if (!jsonStr) continue;
           try {
-            const data = JSON.parse(jsonStr);
-            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (text) onChunk(text);
-          } catch (e) {}
+            handleGeminiLine(line);
+          } catch (err) {
+            console.error('[Gemini Stream] Failed to parse stream event:', err.message);
+          }
         }
       }
-      // process remaining buffer
-      if (buffer.startsWith('data: ')) {
+      buffer += decoder.decode();
+      if (buffer.trim()) {
         try {
-          const data = JSON.parse(buffer.slice(6).trim());
-          const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-          if (text) onChunk(text);
-        } catch (e) {}
+          handleGeminiLine(buffer.trim());
+        } catch (err) {
+          console.error('[Gemini Stream] Failed to parse final stream event:', err.message);
+        }
+      }
+      if (finishReason === 'MAX_TOKENS') {
+        const err = new Error('The response reached the model output limit and may be incomplete.');
+        if (onError) onError(err);
+        else onDone();
+        return;
       }
       onDone();
       return;
     } catch (err) {
       console.error('[Gemini Stream] Error:', err.message);
+      if (geminiChunkSent) {
+        if (onError) onError(new Error('The Gemini response stream was interrupted and may be incomplete.'));
+        else onDone();
+        return;
+      }
     }
   }
 
@@ -318,7 +344,7 @@ async function streamAnswer(query, context, history, personalityPrompt, options 
     try {
       const msgs = [];
       if (history && history.length > 0) {
-        for (const msg of history) {
+        for (const msg of history.slice(-4)) {
           msgs.push({ role: msg.role === 'user' ? 'user' : 'assistant', content: msg.text });
         }
       }
@@ -327,7 +353,7 @@ async function streamAnswer(query, context, history, personalityPrompt, options 
       const stream = await openaiClient.chat.completions.create({
         model: openaiModel,
         messages: [{ role: 'system', content: system }, ...msgs],
-        max_tokens: 2048,
+        max_tokens: 1024,
         temperature: 0.7,
         stream: true,
       });

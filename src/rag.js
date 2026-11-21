@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || null;
-const EMBEDDING_MODEL = 'text-embedding-004';
+const EMBEDDING_MODEL = process.env.GEMINI_EMBEDDING_MODEL || 'gemini-embedding-001';
 const EMBEDDING_URL = `https://generativelanguage.googleapis.com/v1beta/models/${EMBEDDING_MODEL}:embedContent`;
 
 let vectorStore = { vectors: [] };
@@ -17,6 +17,7 @@ try {
 
 function cosineSimilarity(vecA, vecB) {
   if (!vecA || !vecB || vecA.length === 0 || vecB.length === 0) return 0;
+  if (vecA.length !== vecB.length) return 0;
   const dotProduct = vecA.reduce((sum, a, i) => sum + a * (vecB[i] || 0), 0);
   const normA = Math.sqrt(vecA.reduce((sum, a) => sum + a * a, 0));
   const normB = Math.sqrt(vecB.reduce((sum, b) => sum + b * b, 0));

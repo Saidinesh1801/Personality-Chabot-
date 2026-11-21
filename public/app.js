@@ -654,6 +654,7 @@ function renderMarkdown(text) {
 	if (!text) return '';
 	let html = text
 		.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+		.replace(/&lt;br\s*\/?&gt;/gi, '<br>')
 		.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>')
 		.replace(/`([^`]+)`/g, '<code>$1</code>')
 		.replace(/^### (.+)$/gm, '<h4>$1</h4>')
@@ -668,9 +669,10 @@ function renderMarkdown(text) {
 
 	// Tables
 	html = html.replace(/^\|(.+)\|\s*\n\|[-:\s|]+\|\s*\n((?:\|.+\|\s*\n?)+)/gm, (match, header, body) => {
-		const ths = header.split('|').filter(c => c.trim()).map(c => `<th>${c.trim()}</th>`).join('');
+		const parseCells = row => row.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(c => c.trim());
+		const ths = parseCells(header).map(c => `<th>${c}</th>`).join('');
 		const rows = body.trim().split('\n').map(row => {
-			const cells = row.split('|').filter(c => c !== undefined).map(c => `<td>${c.trim()}</td>`).join('');
+			const cells = parseCells(row).map(c => `<td>${c}</td>`).join('');
 			return `<tr>${cells}</tr>`;
 		}).join('');
 		return `<table><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table>`;
